@@ -1,0 +1,156 @@
+# （三）Nginx 代理以及面向未来的 HTTP
+
+## 1. Nginx 安装与基础代理
+
+Nginx 可以设置多个 server 服务，每个服务的 `.conf` 配置文件都在不同目录，只要在基础目录 `/etc/nginx/nginx.conf` 中使用 `include` 引入即可。
+
+先配置好本地地址映射，修改 windows下的 host 文件即可。
+
+```txt
+127.0.0.1 test.com
+127.0.0.1 a.test.com
+127.0.0.1 b.test.com
+127.0.0.1 localhost
+::1 localhost
+```
+
+例如，在基本配置文件 `/etc/nginx/nginx.conf`：
+
+> 注意不同版本 nginx 的配置文件可能不同，这里是 `nginx 1.8`。
+
+
+```nginx
+include /etc/nginx/conf.d/*.conf;
+include /etc/nginx/sites-enabled/*;
+```
+
+然后配置 `/etc/nginx/conf.d/servers.conf` 文件：
+
+```nginx
+server {
+  listen 8081;
+  server_name test.com;
+  location / {
+    #root /mnt/d/nginx;
+    #index index.html;
+    #autoindex on;
+    proxy_pass http://localhost:8888; # 设置代理
+  }
+}
+```
+
+配置以上代理后：
+启动 nginx 服务 `sudo service nginx start`，启动 `nodejs` 服务.
+
+访问 `http:test.com:8081` => 网页指向 `http://localhost:8888`，浏览器地址显示 `http:test.com:8081`。
+
+配置代理后，被代理的服务端返回的 `request.header.host` 为这个被代理的 `host`，这显然不是我们想要的。
+
+```js
+console.log(`request come: ${req.headers.host}`)
+// http://localhost:8888
+```
+
+为什么会这样？可以这样理解代理的原理：我们访问一个地址1 `http:test.com:8081`，要经过一层代理，这个代理要向指定代理的服务的地址2（也就是nodejs 服务 `http://localhost:8888`）发起一个请求，所以在 nodejs 服务端会认为 `host` 是地址2。而实际上浏览器地址栏以及该浏览器发送的 http 请求的 host 都是地址1。
+
+修改：
+```nginx
+proxy_set_header HOST $host; # 使显示的 host 为最初发起请求的地址。
+```
+
+这个例子说明，httpp 的所有明文传输的信息都能被代理修改！以上举例是 **反向代理**。
+
+更多 nginx 配置，自行查文档。
+
+## 2. 代理缓存
+
+Nginx 代理缓存的作用：多个不同浏览器的不同用户访问同一个资源的时候，可以共用同一个缓存。也就是说，只要一个用户在请求了一个资源后，其他用户可直接使用该代理服务器上的缓存。
+
+`Cache-Control` 的值 `s-maxage` 的作用：覆盖 `max-age` 或者 `Expires` 头，但是仅适用于 **共享缓存**（比如各个代理），私有缓存会忽略它。设置了 `s-maxage=<seconds>` 后，表示代理缓存的有效期。 
+
+主服务器响应头的配置：
+```js
+resp.writeHead(200, {
+  'Cache-Control': 'max-age=10, s-maxage=30'
+})
+```
+
+Nginx 配置代理缓存：
+```nginx
+proxy_cache_path cache levels=1:2 keys_zone=my_cache:10m;
+server {
+  listen 8081;
+  server_name test.com;
+
+  location / {
+    proxy_cache my_cache;
+    proxy_pass http://localhost:8888;
+    proxy_set_header HOST $host;
+  }
+}
+```
+
+当我们不需要使用代理缓存的时候，可以使用 `private`，使得代理服务器无法缓存我们的数据，只允许私有缓存。
+
+不允许代理服务器缓存，只允许私有缓存（浏览器/客户端）：
+
+```js
+resp.writeHead(200, {
+  'Cache-Control': 'max-age=10, s-maxage=30, private'
+})
+```
+
+## 3. Vary
+
+#### 定义
+
+`Vary` 是一个HTTP响应头部信息，它决定了对于未来的一个请求头，应该用一个缓存的回复(response)还是向源服务器请求一个新的回复。它被服务器用来表明在 **数据协商** 中选择一个资源代表的时候应该使用哪些头部信息（headers）。
+
+一句话概括它的工作原理就是，就是它表示某个响应因某个响应头部而不同。指定 `*` 为它的值，这样等价于将资源视为唯一，并不进行缓存，但这并不是最佳实践，因此不建议这么做。
+
+语法：
+```
+Vary: <header-name>, <header-name>, ...
+Vary: *
+```
+
+例如，主服务端响应头添加自定义 header：`X-Test-Cache`，然后添加到 `Vary` 中。
+
+```js
+resp.writeHead(200, {
+  'Cache-Control': 's-maxage=30',
+  'Vary': 'X-Test-Cache'
+})
+```
+
+浏览器使用 `fetch` 发起请求，每次都给 `X-Test-Cache` 赋予不同的值 `Date.now()`。
+```js
+fetch('http://test.com:8081/data', {
+  method: 'GET',
+  headers: {
+    'X-Test-Cache': Date.now()
+  }
+}).then(res => res.text())
+  .then(data => {
+    document.querySelector('#data-show').innerHTML = data
+  })
+```
+
+每次 `X-Test-Cache` 的值都不一样，那么每次请求所使用的缓存都不一样，这就导致每次都要向服务器发起请求，因此 `s-maxage=30` 失效。当把 `X-Test-Cache` 设置为固定值例如 `1`，每次请求的 `X-Test-Cache` 都一样，那么使用的都是同一份缓存。
+
+#### 应用
+
+`Vary` 应用场景：
+- 对于 `User-Agent` 头部信息，例如你 **提供给移动端的内容是不同的，可用防止你客户端误使用了用于桌面端的缓存，从而各取所需**。 
+- 对于 `Content-Language` 实体头部，同一个网站的中英文版本所需要的缓存可能是不同的。
+
+建议阅读：
+- [知乎 - 30 分钟 HTTP 查漏补缺之 Vary](https://zhuanlan.zhihu.com/p/47049060)
+- [MDN -Vary](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/vary)
+
+## 4. HTTP2
+
+HTTP2 主要的新特性：
+- 信道复用
+- 分帧传输
+- Server Push

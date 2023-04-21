@@ -1,0 +1,73 @@
+# （六）async 与 await
+
+## 1. MDN 文档
+
+文档上讲的很清楚，建议阅读文档上的例子和解释。
+
+- async 函数：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Statements/async_function
+- await：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/await
+
+建议阅读：[掘金-ES8 中的 async/await——异步函数](https://juejin.cn/post/7031914178210185230)
+
+## 2. async 函数
+
+- 函数的返回值为 `promise` 对象
+-  `promise` 对象的结果由 `async` 函数执行的返回值决定
+
+## 3. await 表达式
+
+- `await` 右侧的表达式一般为 `promise` 对象,但也可以是其它的值
+- 如果表达式是 `promise` 对象，`await` 返回的是 `promise` 成功的值
+- 如果表达式是其它值，直接将此值作为 `await` 的返回值
+- `async/await` 中真正起作用的是 `await`，可以把 `async` 关键字简单的当作一个 标识符. 因为如果 **异步函数** 中不使用 `await` 关键字，其执行基本上跟普通函数没有什么区别，但是对于 **异步函数** 的返回值还是会和 **普通函数** 有区别
+
+## 4.注意
+
+- `await` 必须写在 `async` 函数中，但 `async` 函数中可以没有 `await`
+- 如果 `await` 的  `promise` 失败了，就会抛出异常，需要通过 `try..catch` 捕获处理
+- 当一个 promise 抛出异常时，要使用 `try...catch` 捕获异常，必须使用 `await` 使回调函数变为异步回调，否则 `try...catch` 无法捕获到错误。
+
+```js
+// 正确示例
+async function fn1() {
+  return new Promise((resolve, reject) => {
+    reject('哈哈哈')
+  }, 1000)
+}
+async function fn() {
+  try {
+    const res = await fn1() // 将 await 去掉，则catch 无法捕获异常
+    console.log('成功：' + res)
+  } catch (error) {
+    console.log('异常：' + error)
+  }
+}
+fn()
+// 输出：'异常：哈哈哈'
+```
+
+- 在 `async function` 中是否有 `await` 是不一样的。若 `async function` 中没有 `await`，则这个函数就是纯同步执行，只是返回值是一个 `Promise`。
+- 在 `async function` 中添加了 `await` 后，此行代码之前为立即执行，此行代码之后的语句一起作为 **整体** 变为微队列中的异步回调。相当于给后面的代码套了一层 `then` 方法。
+- 在使用 `try..catch` 捕获了 `await` 中的异常后，`await` 后面代码将不会再执行。
+
+```js
+// 不使用 await
+async function async1() {
+  let a = "aaa";
+  console.log(a);
+}
+async1();
+console.log('bbb')
+// 先输出 aaa，后输出 bbb
+```
+
+```js
+// 使用 await
+async function async1() {
+  let a = await "aaa";
+  console.log(a);
+}
+async1();
+console.log('bbb')
+// 先输出 bbb，后输出 aaa
+```

@@ -1,0 +1,73 @@
+# （六）ECMAScript 10 新特性
+
+## 1. Object.fromEntries
+
+Object.fromEntries() 方法把可迭代对象的键值对列表转换为一个对象。  
+语法：
+```js
+Object.fromEntries(iterable)
+```
+- `iterable`：类似 Array 、 Map 或者其它实现了可迭代协议的可迭代对象。
+- 返回值：一个由该迭代对象条目提供对应属性的新对象。
+- 相当于 `Object.entries` （ES8）的逆运算。
+
+```js
+const mp = new Map([
+  [1, 2],
+  [3, 4]
+])
+const obj = Object.fromEntries(mp)
+console.log(obj)
+// { '1': 2, '3': 4 }
+```
+```js
+const arr = [[1, 2]]
+console.log(Object.fromEntries(arr))
+// {'1': 2}
+```
+
+## 2. trimStart() 和 trimEnd()
+
+- `trimStart()` 去除字符串开头连续的空格（`trimLeft` 是此方法的别名）
+- `trimEnd()` 去除字符串末尾连续的空格（`trimRight` 是此方法的别名）
+
+## 3. Array.prototype.flat 和 Array.prototype.flatMap
+
+- `Array.prototype.flat(i)`：展平一个多维数，`i` 为要展开的层数，默认为1，即展开一层。
+  ```js
+  let arr1 = [1, [2, 3], [4, 5]]
+  console.log(arr1.flat(1)) 
+  // [1,2,3,4,5]
+  let arr2 = [1, [2, 3, [4, 5]]]
+  console.log(arr2.flat(2))
+  // [1,2,3,4,5]
+  ```
+  使用 `Infinity` 作为深度，展开任意深度的嵌套数组
+  ```js
+  [1, [2, 3, [4, 5]]].flat(Infinity)
+  // [1, 2, 3, 4, 5, 6]
+  ```
+  也可以使用 `flat` 来去除数组空项
+  ```js
+  let arr = [1,2,3,,4]
+  arr.flat() // [1,2,3,4]
+  ```
+- `Array.prototype.flatMap`：相当于 `map` 和 `flat` 的结合，方法首先使用映射函数映射每个元素，然后将结果压缩成一个新数组。
+  ```js
+  let arr = [1,2,3,4]
+  let res1 = arr.map(x => [x ** 2])
+  console.log(res1)
+  // [[1],[4],[9],[16]]
+  let res2 = arr.flatMap(x => [x ** 2])
+  console.log(res2)
+  // [1,4,9,16]
+  ```
+
+## 4. Symbol.prototype.description
+
+使用 `Symbol()` 创建的 `Symbol` 字面量，可以直接使用 `description` 获取该字面量的描述。
+```js
+let sym = Symbol('hello')
+console.log(sym.description)
+// hello
+```

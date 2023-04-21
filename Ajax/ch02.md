@@ -1,0 +1,439 @@
+# （二）Ajax 编程
+
+## 1. 模板引擎
+
+使用步骤：
+1. 下载 art-template 模板引擎库文件并在 HTML 页面中引入库文件。
+    ```HTML
+    <script src="./js/template-web.js"></script>
+    ```
+
+2. 准备 art-template 模板
+    ```html
+    <script id="tpl" type="text/html">
+        <div class="box"></div>
+    </script>
+    ```
+
+3. 告诉模板引擎将哪一个模板和哪个数据进行拼接
+    ```js
+    var html = template('tpl', {username: 'zhangsan', age: '20'});
+    ```
+
+4. 将拼接好的html字符串添加到页面中
+    ```js
+    document.getElementById('container').innerHTML = html;
+
+5. 通过模板语法告诉模板引擎，数据和html字符串要如何拼接
+    ```js
+    <script id="tpl" type="text/html">
+        <div class="box"> {{ username }} </div>
+    </script>
+    ```
+
+举例：
+```html
+<div id="container"></div>
+<script src="./js/template-web.js"></script>
+<script type="text/html" id="tpl">
+    <h1>{{username}} {{age}}</h1>
+</script>
+<script type="text/javascript">
+    let html = template('tpl', { username: 'rick', age: 30 });
+    // console.log(html);
+    document.querySelector('#container').innerHTML = html;
+</script>
+```
+
+## 2. 案例
+
+### 2.1 验证邮箱地址唯一性
+
+- 获取文本框并为其添加离开焦点事件
+- 离开焦点时，检测用户输入的邮箱地址是否符合规则
+- 如果不符合规则，阻止程序向下执行并给出提示信息
+- 向服务器端发送请求，检测邮箱地址是否被别人注册
+- 根据服务器端返回值决定客户端显示何种提示信息
+- 正则判断邮箱格式：`/^[A-Za-z\d]+([-_.][A-Za-z\d]+)*@([A-Za-z\d]+[-.])+[A-Za-z\d]{2,4}$/`
+
+
+### 2.2 搜索框内容自动提示
+
+- 获取搜索框并为其添加用户输入事件
+- 获取用户输入的关键字
+- 向服务器端发送请求并携带关键字作为请求参数
+- 将响应数据显示在搜索框底部
+
+### 2.3 省市区三级联动
+
+- 通过接口获取省份信息
+- 使用 JavaScript 获取到省市区下拉框元素
+- 将服务器端返回的省份信息显示在下拉框中
+- 为下拉框元素添加表单值改变事件（`onchange`）
+- 当用户选择省份时，根据省份 `id` 获取城市信息
+- 当用户选择城市时，根据城市 `id` 获取县城信息
+
+案例代码：https://github.com/Hacker-C/Programming-Everyday/tree/master/Ajax/day02/public
+
+## 3. FormData
+
+### 3.1 FormData 对象的作用
+
+在有多个参数的 Ajax 请求中，例如名字、密码、年龄、性别等，都要使用 DOM 获取元素，然后又要按照规则拼接参数。传统 Ajax 也不能传送二进制文件。使用 `FormData` 对象可以解决这些问题。  
+
+`FormData` 的作用：
+- 模拟 HTML 表单，相当于将 HTML 表单映射成 **表单对象**，自动 **将表单对象中的数据拼接成请求参数的格式**。
+- 异步上传二进制文件
+
+### 3.2 FormData 对象的使用
+
+1. 准备 HTML 表单
+    ```html
+    <form id="form">
+        <input type="text" name="username" />
+        <input type="password" name="password" />
+        <input type="button"/>
+    </form>
+    ```
+
+2. 将 HTML 表单转化为 `FormData` 对象
+    ```js
+    var form = document.getElementById('form'); 
+    var formData = new FormData(form);
+    ```
+
+3. 提交表单对象
+    ```js
+    var xhr = new XMLHttpRequest();
+    xhr.open('post', 'http://localhost:3001/post');
+    xhr.send(formData);
+    ```
+
+注意：
+1. `FormData` 对象不能用于 `get` 请求，因为对象需要被传递到 `send` 方法中，而 `get` 请求方式的请求参数只能放在请求地址的后面。
+2. 服务器端 bodyParser 模块不能解析 `FormData` 对象表单数据，我们需要使用 formidable 模块进行解析。
+
+node 后端服务器配置（app.js）：
+```js
+// 需要使用 npm install formidable 下载好 formidable 模块
+const formidable = require('formidable');
+app.post('/formData', (req, res) => {
+    // 创建formidable表单解析对象
+    const form = new formidable.IncomingForm();
+    // 解析客户端传递过来的FormData对象
+    form.parse(req, (err, fields, files) => {
+        res.send(fields);
+    });
+});
+```
+
+### 3.3 FormData 对象的实例方法
+
+1. 获取表单对象中属性的值
+    ```js
+    formData.get('key');
+    ```
+
+2. 设置表单对象中属性的值
+    ```js
+    formData.set('key', 'value');
+    ```
+
+3. 删除表单对象中属性的值
+    ```js
+    formData.delete('key');
+    ```
+
+4. 向表单对象中追加属性值
+    ```js
+    formData.append('key', 'value');
+    ```
+
+注意：`set` 方法与 `append` 方法的区别是，在属性名已存在的情况下，`set` 会覆盖已有键名的值，`append` 会保留两个值。
+
+### 3.4 FormData 二进制文件上传
+
+```html
+<input type="file" id="file"/>
+```
+
+```js
+var file = document.getElementById('file')
+// 当用户选择文件的时候
+file.onchange = function () {
+    // 创建空表单对象
+    var formData = new FormData();
+    // 将用户选择的二进制文件追加到表单对象中
+    formData.append('attrName', this.files[0]);
+    // 配置ajax对象，请求方式必须为post
+    xhr.open('post', 'www.example.com');
+    xhr.send(formData);
+}
+```
+
+#### 3.4.1 FormData 文件上传展示
+
+```js
+ // 当用户选择文件的时候
+file.onchange = function () {
+    // 文件上传过程中持续触发onprogress事件
+    xhr.upload.onprogress = function (ev) {
+        // 当前上传文件大小/文件总大小 再将结果转换为百分数
+        // 将结果赋值给进度条的宽度属性 
+        bar.style.width = (ev.loaded / ev.total) * 100 + '%';
+    }
+}
+```
+
+#### 3.4.2 FormData 文件上传图片即时预览
+
+在我们将图片上传到服务器端以后，服务器端通常都会将图片地址做为响应数据传递到客户端，客户端可以从响应数据中获取图片地址，然后将图片再显示在页面中。
+
+```js
+xhr.onload = function () {
+    var result = JSON.parse(xhr.responseText);
+    var img = document.createElement('img');
+    img.src = result.src;
+    img.onload = function () {
+        document.body.appendChild(this);
+    }
+}
+```
+
+## 4. 同源策略
+
+### 4.1 Ajax 请求限制
+
+Ajax 只能向自己的服务器发送请求。比如现在有一个A网站、有一个B网站，A网站中的 HTML 文件只能向A网站服务器中发送 Ajax 请求，B网站中的 HTML 文件只能向 B 网站中发送 Ajax 请求，但是 A 网站是不能向 B 网站发送 Ajax请求的，同理，B 网站也不能向 A 网站发送 Ajax请求。
+
+### 4.2 什么是同源
+
+如果两个页面拥有相同的 **协议、域名和端口**，那么这两个页面就属于同一个源，其中只要有一个不相同，就是不同源。  
+例如，对于网站：http://www.example.com/dir/page.html ，有以下例子。
+- http://www.example.com/dir2/other.html ：同源
+- http://example.com/dir/other.html ：不同源（域名不同）
+- http://v2.www.example.com/dir/other.html ：不同源（域名不同）
+- http://www.example.com:81/dir/other.html ：不同源（端口不同）
+- https://www.example.com/dir/page.html ：不同源（协议不同）
+
+### 4.3 同源政策的目的
+
+同源策略，它是由 Netscape 提出的一个著名的安全策略，现在所有支持 JavaScript 的浏览器都会使用这个策略。  
+
+同源政策是为了保证用户信息的安全，防止恶意的网站窃取数据。最初的同源政策是指 A 网站在客户端设置的 Cookie，B网站是不能访问的。  
+
+随着互联网的发展，同源政策也越来越严格，在不同源的情况下，其中有一项规定就是无法向非同源地址发送Ajax 请求，如果请求，浏览器就会报错。  
+![ajax4](https://cdn.jsdelivr.net/gh/Hacker-C/Picture-Bed@main/docs/ajax4.5q3rre1hgeo0.png)
+
+> [!TIP]
+> 浏览器请求发送成功，服务器也可以成功响应数据，但是浏览器拒绝接收响应的数据！这意味着第一次发送 Ajax 请求的时候，HTTP状态码为 200 OK。
+
+### 4.4 使用 JSONP 解决同源限制问题
+
+JSONP 是 json with padding 的缩写，它不属于 Ajax 请求，但它可以模拟 Ajax 请求。  
+使用 JSONP，我们可以绕过同源政策，从而实现 **跨域读取数据**。
+
+我们知道 `script` 标签可以引入其他 JS 文件，比如 CDN jQuery链接：
+```js
+<script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+```
+
+**JSONP 原理**：实际上 `script` 中的 `src` 属性中可以放的不止 JS 这一种文件类型，也可以是一个网站地址。`script` 处理 JS 文件的原理，首先加载该地址中的 JS 文件，然后从头到尾执行一遍该文件的内容。所以，如果 `src` 的内容是一段内容为函数的字符串，那么该函数将会被执行。那么服务器可以返回一个 “函数字符串”，然后客户端执行提前准备好的该函数内容。  
+
+基本步骤：
+
+1. 提前定义好 `fn` 函数，在 `fn` 函数内部对服务器端返回的数据进行处理
+    ```js
+    function fn (data) {
+        console.log(data);
+    }
+    ```
+
+2. 将不同源的服务器端请求地址写在 script 标签的 `src` 属性中。
+    ```html
+    <script src="www.example.com"></script>
+    ```
+3. 服务器端响应数据必须是一个函数的调用，真正要发送给客户端的数据需要作为函数调用的参数。  
+    例如，node express 服务器端（app.js）：
+    ```js
+    const data = 'fn({name: "张三", age: "20"})';
+    res.send(data);
+    ```
+
+### 4.5 JSONP 代码优化
+
+#### 4.5.1 优化一：客户端需要将函数名称传递到服务器端
+
+优化一：客户端修改函数名，客户端也要修改，很麻烦。客户端将每次将更新的函数名传给服务器端，于是两方都同步函数名了。
+```html
+<script>
+    // 客户端将每次将更新的函数名传给服务器端，于是两方都同步函数名了。
+    function myFn(data) {
+        console.log(data);
+    }
+</script>
+<script src="http://localhost:3002/better?callback=myFn"></script>
+```
+
+node express 服务器（app.js）：
+```js
+// 客户端将每次将更新的函数名传给服务器端，于是两方都同步函数名了。
+app.get('/better', (req, res) => {
+    const result = req.query.callback + '({name: "张三"})';
+    res.send(result);
+})
+```
+
+#### 4.5.2 优化二：将 script 请求的发送变成动态请求
+
+分析：每次发送请求都需要执行一次 `script` 中的文件内容，也就需要刷新一次界面，这样很不方便。我们可以**动态创建** `script` 节点，给 `script` 添加 `src` 属性，然后添加到网页中。在完成请求后，再将该 `script` 标签移除即可。这就实现了 **动态请求**。  
+
+参考代码：
+```js
+function myFn(data) {
+    console.log(data);
+}
+let btn = document.querySelector('.btn');
+btn.onclick = function () {
+    // 创建 script 标签，动态添加到文档中，从而动态请求
+    let script = document.createElement('script');
+    script.src = 'http://localhost:3002/better?callback=myFn';
+    document.body.appendChild(script);
+    // 在script加载完成后，移除该节点
+    script.onload = function () {
+        document.body.removeChild(script);
+    }
+}
+```
+
+#### 4.5.3 优化三：封装 jsonp 函数
+
+封装 jsonp 函数，方便发送请求。
+```js
+function jsonp(options) {
+    let script = document.createElement('script');
+    // 创造一个独一无二的函数名
+    let myFn = 'myJsonp' + Math.random().toString().replace('.', '');
+    // 全局创建此函数，以便后面执行 script 中代码的时候能找到 myFn
+    window[myFn] = options.success;
+    // 拼接参数
+    let params = '';
+    for (let k in options.data) {
+        params += '&' + k + '=' + options.data[k];
+    }
+    // 拼接请求地址
+    script.src = options.url + '?callback=' + myFn + params;
+    document.body.appendChild(script);
+    script.onload = function () {
+        document.body.removeChild(script);
+    }
+}
+```
+nodejs express 服务端（app.js）：
+```js
+app.get('/better', (req, res) => {
+    res.jsonp({ name: "张三" });
+})
+```
+调用封装的 jsonp：
+```js
+jsonp({
+    url: 'http://localhost:3002/better',
+    data: {
+        name: 'peter',
+        age: 20
+    },
+    success: function (data) {
+        console.log(data);
+    },
+});
+```
+
+### 4.6 使用 JSONP 获取腾讯天气
+
+- Github项目地址：https://github.com/Hacker-C/GetWeather
+- 预览地址：https://get-weather-woad.vercel.app
+
+### 4.7 CORS 跨域资源共享
+
+**CORS**：全称为 Cross-Origin Resource Sharing，即 **跨域资源共享**，它允许浏览器向跨域服务器发送 Ajax 请求，克服了 Ajax 只能同源使用的限制。使用 CORS 的时候，客户端的代码不需要修改，在服务端作相应的配置皆可。
+
+
+![ajax5](https://cdn.jsdelivr.net/gh/Hacker-C/Picture-Bed@main/docs/ajax5.5nuxk43xejw0.png)
+
+
+- 非同源网站的发送端
+    ```
+    origin: http://localhost:3000
+    ```
+- 允许哪些非同源网站的请求
+    ```
+    Access-Control-Allow-Origin: 'http://localhost:3000'
+    ```
+- 允许所有非同源网站的请求
+    ```
+    Access-Control-Allow-Origin: '*'
+    ```
+- 允许的请求方式
+    ```
+    Access-Control-Allow-Methods: 'get,post'
+    ```
+
+Node 服务器端设置响应头示例代码：
+```js
+// 拦截所有请求
+app.use((req, res, next) => {
+    // 允许哪些客户端访问
+    res.header('Access-Control-Allow-Origin', '*');
+    // 允许哪些请求方法
+    res.header('Access-Control-Allow-Methods', 'get,post');
+    next();
+})
+```
+
+### 4.8 访问非同源数据-服务器端解决方案
+
+同源政策是浏览器对 Ajax 技术的限制，**服务器端是不存在同源政策限制**。因此，客户端A可以先向自身所在的服务器端A发送 ajax 请求，服务器A再向服务器B发送请求。服务器A将从服务器B响应来的数据传给客户端A。这样，就绕过了同源政策，实现跨域请求。  
+
+![ajax6](https://cdn.jsdelivr.net/gh/Hacker-C/Picture-Bed@main/docs/ajax6.6t1p9b2gr9k0.png)
+
+浏览器端A（ http://localhost:3001 ）向自身的服务器端A（ http://localhost:3001 ）发送请求：
+```js
+ajax({
+    type: 'get',
+    url: 'http://localhost:3001/server',
+    success: function (data) {
+        console.log(data);
+    }
+});
+```
+
+服务器端A向服务器端B（ http://localhost:3002 ）使用 `request` 发送请求：
+```js
+// 向其他服务器端请求数据的模块
+const request = require('request');
+app.get('/server', (req, res) => {
+    request('http://localhost:3002/CORS', (err, response, body) => {
+        // console.log(err);
+        // console.log(response);
+        // console.log(body);
+        // 1号服务器向2号服务器响应，服务器之间请求没有同源限制，
+        // 1号服务器将2号服务器响应的数据传给1号浏览器端
+        res.send(body);
+    })
+})
+```
+
+### 4.9 Cookie
+
+HTTP Cookie（也叫 Web Cookie 或浏览器 Cookie）是 **服务器发送到用户浏览器并保存在本地的一小块数据**，它会在浏览器下次向同一服务器再发起请求时被携带并发送到服务器上。通常，它用于告知服务端两个请求是否来自同一浏览器，如 **保持用户的登录状态**。Cookie **使基于无状态的HTTP协议记录稳定的状态信息成为了可能**。
+
+![ajax7](https://cdn.jsdelivr.net/gh/Hacker-C/Picture-Bed@main/docs/ajax7.68d0nsprfak0.png)
+
+### 4.10 withCredentials 属性
+
+在使用 Ajax 技术发送跨域请求时，默认情况下不会在请求中携带 cookie 信息。
+
+对于前端，设置 `xhr.withCredentials` 指定在涉及到跨域请求时，是否携带 cookie 信息，默认值为 `false`
+
+对于服务端，设置 `Access-Control-Allow-Credentials：true` 允许客户端发送请求时携带 cookie。

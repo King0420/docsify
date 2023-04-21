@@ -1,0 +1,180 @@
+# （三）Jquery 中的 Ajax
+
+## 1. \$.ajax()
+
+### 1.1 概述
+
+`$.ajax()` 封装好了 Ajax 请求，我们可以更方便的发送请求。
+
+```js
+$.ajax({
+    // 设置请求类型
+    type: 'get',
+    // 设置请求地址
+    url: 'http://www.example.com',
+    // 设置请求参数
+    data: { name: 'zhangsan', age: '20' },
+    // 设置请求参数类型
+    contentType: 'application/x-www-form-urlencoded',
+    // 设置请求发送前的要做的事情
+    beforeSend: function () { 
+        // 阻断请求的发送
+        return false
+    },
+    // 请求成功后要做的事情
+    success: function (response) {},
+    // 请求出现错误要做的事情
+    error: function (xhr) {}
+});
+```
+
+其中，请求参数 `data` 的类型可以是对象类型（`{ name: 'zhangsan', age: '20' }`）或者 `&` 拼接类型（`'name=zhangsan&age=20'`），此时请求头设置的 `contentType` 为 `application/x-www-form-urlencoded`，这也是默认类型。  
+
+`data` 也可以是对象字符串类型，需要使用 `JSON.stringify()` 将对象转换为对象字符串，且此时 `contentType` 设置为 `application/json`。
+
+案例：`$.ajax()` 请求设置请求参数。
+```js
+var params = {name: 'wangwu', age: 300};
+$.ajax({
+    // 请求方式
+    type: 'post',
+    // 请求地址
+    url: '/user',
+    // 向服务器端发送的请求参数
+    // name=zhangsan&age=100
+    data: JSON.stringify(params),
+    // 指定参数的格式类型
+    contentType: 'application/json',
+    // 请求成功以后函数被调用
+    success: function (response) {
+        // response为服务器端返回的数据
+        // 方法内部会自动将json字符串转换为json对象
+        console.log(response);
+    }
+```
+
+上面请求中 `contentType` 的请求参数类型为 `application/json`，所以需要使用 `JSON.stringify(params)` 将 JSON 对象转换为对象字符串。
+
+### 1.2 serialize 方法的使用
+
+`serialize()` 方法将表单中的数据自动拼接成字符串类型的参数。
+```js
+var params = $('#form').serialize();
+// name=zhangsan&age=30
+```
+
+案例：将表单内容拼接成字符串类型的参数
+
+HTML 结构
+```html
+<form id='form'>
+    <input type='text' name='username'>
+    <input type='password' name='password'>
+    <input type='submit' value='提交'>
+</form>
+```
+
+方法一：使用 `serialize()` 将参数拼接成 `name=zhangsan&age=30` 类型字符串。
+```js
+$('#form').on('submit', function () {
+    // 将表单内容拼接成字符串类型的参数
+    var params = $('#form').serialize();
+    console.log(params)
+    return false;
+});
+```
+
+方法二：使用 `serializeArray()`，通过一定转换，使表单数据转换为 `{name: 'zhangsan', age: 100}`  JSON 对象类型。
+```js
+$('#form').on('submit', function () {
+    // 将表单内容拼接成字符串类型的参数
+    serializeObject($(this));
+    return false;
+});
+
+// 将表单中用户输入的内容转换为对象类型
+function serializeObject (obj) {
+    // 处理结果对象
+    var result = {};
+    // [{name: 'username', value: '用户输入的内容'}, {name: 'password', value: '123456'}]
+    var params = obj.serializeArray();
+    // 循环数组 将数组转换为对象类型
+    $.each(params, function (index, value) {
+        result[value.name] = value.value;
+    })
+    // 将处理的结果返回到函数外部
+    return result;
+}
+```
+
+### 1.3 \$.ajax 发送 jsonp 请求
+
+在 `$.ajax()` 设置 `dataType: 'jsonp'` 即可发送 jsonp 请求。
+
+```js
+$.ajax({
+    // 请求地址
+    url: 'http://www.example.com',
+    // 指定当前发送jsonp请求
+    dataType: 'jsonp',
+    // 可选，向服务器端传递函数名字的参数名称
+    jsonp: 'cb',
+    // 可选，指定函数名称，若不想用 success 函数时指定，需要提前在全局定义好该函数
+    jsonCallback: 'fnName',
+    success: function (response) {} 
+})
+```
+
+## 2. \$.get 和 \$.post
+
+`$.get()` 方法用于发送 get 请求，`$.post()` 方法用于发送 post 请求。
+
+`$.get()` 语法：
+```js
+$.get(URL,data,function(data,status,xhr),dataType)
+```
+
+`$.post()` 语法：
+```js
+$.post(URL,data,function(data,status,xhr),dataType)
+```
+
+两者的参数格式是类似的，如下所示：
+
+|参数|说明|
+|-|-|
+|`URL`|必需。规定将请求发送到哪个 `URL`。|
+|`data`|可选。规定连同请求发送到服务器的数据。|
+|`function(data,status,xhr)`|	可选。规定当请求成功时运行的函数。<br>函数内部参数：<ul><li>`data`：包含来自请求的结果数据</li><li>`status`：包含请求的状态（'success'、'notmodified'、'error'、'timeout'、'parsererror'）</li><li>`xhr`： 包含 XMLHttpRequest 对象</li></ul>|
+|`dataType`|可选。规定预期的服务器响应的数据类型。<br>默认地，jQuery 会智能判断。<ul><li>`'xml'` - 一个 XML 文档</li><li>`'html'` - HTML 作为纯文本</li><li>`'text'` - 纯文本字符串</li><li>`'script'` - 以 JavaScript 运行响应，并以纯文本返回</li><li>`'json'` - 以 JSON 运行响应，并以 JavaScript 对象返回</li><li>`'jsonp'` - 使用 JSONP 加载一个 JSON 块，将添加一个 `'?callback=?'` 到 `URL` 来规定回调</li></ul>|
+
+例如：
+```js
+$.get('http://www.example.com', {name: 'zhangsan', age: 30}, function (response) {
+
+});
+$.post('http://www.example.com', {name: 'lisi', age: 22}, function (response) {
+
+});
+```
+
+## 4. 全局事件
+
+只要页面中有 Ajax 请求被发送，对应的全局事件就会被触发。
+```js
+.ajaxStart(function(){}) // 当请求开始发送时触发
+.ajaxComplete(function(){}) // 当请求完成时触发
+```
+- `function()`：必需。规定当 AJAX 请求开始时运行的函数。
+
+## 5. nprogress 进度条插件
+
+官宣：纳米级进度条，使用逼真的涓流动画来告诉用户正在发生的事情！
+```js
+<link rel='stylesheet' href='nprogress.css'/>
+<script src='nprogress.js'></script>
+```
+```js
+NProgress.start();  // 进度条开始运动 
+NProgress.done();   // 进度条结束运动
+```

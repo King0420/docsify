@@ -1,0 +1,703 @@
+# （二）HTTP 各种特性总览
+
+## 1. 搭建一个简单的 Web 服务
+
+使用 nodejs 内置的 htpp 模块创建一个简单的 Web 服务。
+
+```js
+// server.js 文件
+const http = require('http')
+
+http.createServer((request, response) => {
+
+  response.end('hello')
+
+}).listen('8080')
+
+console.log('服务已启动：localhost:8080')
+```
+
+启动服务：
+```
+node server.js
+```
+
+每次修改服务器文件都需要重启服务，过于麻烦，这里使用 `nodemon` 来热更新 nodejs 服务。
+
+安装：
+```
+npm i nodemon -g
+```
+
+使用：
+```
+nodemon server.js
+```
+
+## 2. CORS 跨域请求的限制与解决
+
+### 同源策略
+
+同源策略是一个重要的 **安全策略**，它用于限制一个origin的文档或者它加载的脚本如何能与另一个源的资源进行交互。它能帮助阻隔恶意文档，减少可能被攻击的媒介。对于 **浏览器上的请求**，同源策略只允许 **同源** 的 URL 之间进行请求。
+
+**同源** 是指两个 URL 的协议（protocol）、主机名（host）、端口号（port）都相同。
+
+注意 **同源策略是浏览器的安全策略，所以服务端之间是没有跨域问题的**。
+
+对于跨域请求，浏览器实际上请求成功了，服务器也返回数据了。但是浏览器会执行安全措施，最后客户端拿不到数据。
+
+一个解决跨域问题的方法是 CORS。
+
+### CORS 
+
+CORS（Ross-Origin Resource Sharing，跨源资源共享）是一种基于 HTTP 头的机制，该机制通过 **允许服务器标示除了它自己以外的其它 origin（域，协议和端口），这样浏览器可以访问加载这些资源**。
+
+现在模拟一个 CORS 解决跨域请求，server1.js 启动的服务读取 test.html 文件内容返回到浏览器，然后在 test.html 中向 server2.js 发起请求。
+
+server1.js 内容：
+```js
+const http = require('http')
+const fs = require('fs')
+
+http.createServer((request, response) => {
+
+  let html = fs.readFileSync('./test.html', {
+    encoding: 'utf8'
+  })
+  response.writeHead(200, {
+    'Conten-Type': 'text/html'
+  })
+  response.end(html)
+
+}).listen(8888)
+
+console.log('server1 listening on 8888')
+```
+
+test.html 内容：
+```html
+...
+<body>
+  <script>
+    // 向 localhost:8887 发起请求
+    let xhr = new XMLHttpRequest()
+    xhr.open('GET', 'http://localhost:8887')
+    xhr.send()
+  </script>
+</body>
+...
+```
+
+这样 test.html 界面就部署在 `localhost:8888` 上了。
+
+server2.js 内容：
+```js
+const http = require('http')
+
+http.createServer((request, response) => {
+
+  // 设置允许请求的地址，解决跨域
+  response.writeHead(200, {
+    'Access-Control-Allow-Origin': 'http://localhost:8888'
+  })
+  response.end('hello')
+
+}).listen(8887)
+
+console.log('server2 listening on 8887')
+```
+
+### Access-Control-Allow-Origin
+
+给响应头添加了 `Access-Control-Allow-Origin` 头部信息，若不添加此响应头部，则会报错，也就是同源策略（CORS）限制导致的跨域问题。其值可以为 `*`（表示所有请求都允许），也可以是一个 `url` 地址。**属于 Request headers**。
+
+`Access-Control-Allow-Origin` 响应头指定了该响应的资源是否被允许与给定的 origin 共享。
+
+
+
+语法：
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Origin: <origin>
+```
+
+### Content-Type
+
+`Content-Type` 实体头部用于指示资源的 MIME 类型 media type 。在响应中，Content-Type标头告诉客户端实际返回的内容的内容类型。**属于 Entity header**。
+
+读取完 `test.html` 内容后，设置了响应头的 `Content-Type` 为 `text/html` 类型，防止浏览器解析为纯文本。（不指定也默认会解析为 html）
+
+```js
+response.writeHead(200, {
+  'Conten-Type': 'text/html'
+})
+```
+
+语法:
+```
+Content-Type: text/html; charset=utf-8
+Content-Type: multipart/form-data; boundary=something
+```
+
+推荐阅读：
+- [MDN CORS](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS)
+- [MDN MIME](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/MIME_types)
+- [MDN Conten-Type](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Type)
+
+## 3. CORS 跨域请求限制与预请求验证
+
+我们在请求头设置自定义头部 `X-Test-Cors`，然后发起请求。
+
+```js
+fetch('http://localhost:8887', {
+  method: 'POST',
+  headers: {
+    'X-Test-Cors': '123'
+  }
+}).then(res => res.text())
+  .then(data => {
+    console.log(data)
+  })
+```
+
+此时浏览器报错：
+```
+Access to fetch at 'http://localhost:8887/' from
+origin 'http://localhost:8888' has been blocked by CORS policy: 
+Request header field x-test-cors is not allowed by 
+Access-Control-Allow-Headers in preflight response.
+```
+
+点开浏览器控制台的 `network`，发现多了一个 `OPTIONS` 请求。这就是一个预请求，在请求头设置了自定义头部，而服务端没有指定相应的 `Access-Control-Allow-Headers`，就会报错。
+
+在服务端设置好 `Access-Control-Allow-Headers: 'X-Test-Cors'`，此时无报错。同时，OPTIONS 预请求还在，此时验证通过。
+```js
+response.writeHead(200, {
+  'Access-Control-Allow-Origin': 'http://localhost:8888',
+  'Access-Control-Allow-Headers': 'X-Test-Cors',
+  'Access-Control-Allow-Methods': 'POST, PUT, DELETE',
+  'Access-Control-Allow-Max-Age': '1000'
+})
+```
+
+### OPTIONS
+
+HTTP 的 `OPTIONS` 方法 用于获取目的资源所支持的通信选项，通常是用于 **预请求验证** 来请求资源的一方是否具有权限。
+
+#### 简单请求与复杂请求
+
+某些请求不会触发 CORS 预检请求，这样的请求一般称为 "简单请求"，而会触发预检的请求则成为 "复杂请求"。
+
+##### 简单请求
+
+- 请求方法为 GET、HEAD、POST 时发的请求
+- 人为设置了规范集合之内的首部字段，如 `Accept/Accept-Language/Content-Language/Content-Type/DPR/Downlink/Save-Data/Viewport-Width/Width`
+- Content-Type 的值仅限于下列三者之一,即 `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain`
+- 请求中的任意 `XMLHttpRequestUpload` 对象均没有注册任何事件监听器
+- 请求中没有使用 `ReadableStream` 对象。
+
+##### 复杂请求
+
+- 使用了下面任一 HTTP 方法，PUT/DELETE/CONNECT/OPTIONS/TRACE/PATCH
+- 人为设置了以下集合之外首部字段，即简单请求外的字段
+- `Content-Type` 的值不属于下列之一，即 `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain`
+
+#### OPTIONS 关键的请求头字段
+
+##### Request header 的关键字段
+
+|关键字段|作用|
+|-|-|
+|`Access-Control-Request-Methods`|告知服务器，实际请求将使用 DELETE/PUT 等“复杂”方法|
+|`Access-Control-Request-Headers`|	告知服务器，实际请求将携带的自定义请求首部字段|
+
+例如：
+```
+Access-Control-Allow-Methods: PUT
+Access-Control-Allow-Headers: X-Test-Cors,
+```
+
+##### Response header 的关键字段
+
+|关键字段|作用|
+|-|-|
+|`Access-Control-Allow-Methods`|表明服务器允许客户端使用什么方法发起请求|
+|`Access-Control-Allow-Origin`|允许跨域请求的域名，如果要允许所有域名则设置为 `*`|
+|`Access-Control-Allow-Headers`|将实际请求所携带的首部字段告诉服务器|
+|`Access-Control-Max-Age`|指定了预检请求的结果能够被缓存多久，单位秒|
+
+例如：
+```js
+response.writeHead(200, {
+  'Access-Control-Allow-Origin': 'http://localhost:8888',
+  'Access-Control-Allow-Headers': 'X-Test-Cors',
+  'Access-Control-Allow-Methods': 'POST, PUT, DELETE',
+  'Access-Control-Allow-Max-Age': '1000'
+})
+```
+
+设置 `Access-Control-Allow-Max-Age: 1000`，表示1000s之内不需要发送 OPTIONS 预请求。
+
+建议阅读：
+- [掘金-面试官：说说你对 options 请求的理解](https://juejin.cn/post/6844904183905157127)
+- [MDN OPTIONS](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/OPTIONS)
+
+## 4. 缓存头 Cache-Control 的含义和使用
+
+`Cache-Control` 通用消息头字段（General header），被用于在 http 请求和响应中，通过指定指令来实现缓存机制。缓存指令是单向的，这意味着在请求中设置的指令，不一定被包含在响应中。
+
+### 缓存请求指令
+
+客户端可以在 HTTP 请求中使用的标准 `Cache-Control` 指令。
+
+```
+Cache-Control: max-age=<seconds>
+Cache-Control: max-stale[=<seconds>]
+Cache-Control: min-fresh=<seconds>
+Cache-control: no-cache
+Cache-control: no-store
+Cache-control: no-transform
+Cache-control: only-if-cached
+```
+
+### 缓存响应指令
+
+服务器可以在响应中使用的标准 `Cache-Control` 指令。
+
+```
+Cache-control: must-revalidate
+Cache-control: no-cache
+Cache-control: no-store
+Cache-control: no-transform
+Cache-control: public
+Cache-control: private
+Cache-control: proxy-revalidate
+Cache-Control: max-age=<seconds>
+Cache-control: s-maxage=<seconds>
+```
+
+### 指令含义
+
+#### 可缓存性
+
+- `public`  
+  表明响应可以被 **任何对象**（包括：发送请求的客户端，代理服务器，等等）缓存，即使是通常不可缓存的内容。（例如：1.该响应没有 max-age 指令或 Expires 消息头；2. 该响应对应的请求方法是 POST。）
+- `private`  
+  表明响应 **只能被单个用户缓存，不能作为共享缓存（即代理服务器不能缓存它）**。私有缓存可以缓存响应内容，比如：对应用户的本地浏览器。
+- `no-cache`  
+  可以在客户端存储资源（不一定能用，需要服务端验证），每次都必须 **去服务端做新鲜度校验**，来决定从服务端获取新的资源（200）还是使用客户端缓存（304）。（**协商缓存验证**）
+- `no-store`  
+  永远都不要在客户端存储资源，永远都去原始服务器去获取资源。即 **不使用任何缓存。**
+
+#### 到期
+
+- `max-age=<seconds>`  
+  设置缓存存储的最大周期，超过这个时间缓存被认为过期(单位秒)。与Expires相反，时间是相对于请求的时间。
+- `s-maxage=<seconds>`  
+  覆盖 max-age 或者Expires头，但是仅适用于共享缓存(比如各个代理)，私有缓存会忽略它。
+- `max-stale[=<seconds>]`  
+  表明客户端愿意接收一个已经过期的资源。可以设置一个可选的秒数，表示在该时间内可以接受过时的资源。
+
+#### 重新验证和重新加载
+
+- `must-revalidate`  
+  一旦资源过期（比如已经超过max-age），在成功向原始服务器验证之前，缓存不能用该资源响应后续请求。
+- `proxy-revalidate`  
+  与 `must-revalidate` 作用相同，但它仅适用于共享缓存（例如代理），并被私有缓存忽略。
+
+推荐阅读：
+- [MDN Cache-Control](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Cache-Control)
+
+## 5. 缓存验证 Last-Modified 和 Etag 的使用
+
+之前提到过 `Cache-Control` 的 `no-cache` 字段是允许客户端存储，但是否要使用该存储还得要服务器进行验证，若服务器相应的内容没有改变，则可以使用缓存，这也称为 **协商缓存**。
+
+协商缓存一般有两种方法：`Last-Modified` 和 `Etag`。在优先级上，**服务器校验优先考虑Etag**。
+
+### Last-Modified
+
+`Last-Modified` 是一个响应首部，其中包含源头服务器认定的资源做出修改的日期及时间。 它通常被用作一个验证器来 **判断接收到的或者存储的资源是否彼此一致**。
+
+`Last-Modified` 一般配合来自请求头的 `If-Modified-Since` 或者 `If-Unmodified-Since` 使用。
+
+语法：
+```
+Last-Modified: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
+```
+
+### Etag
+
+`ETag` 是一个响应首部字段，是资源的特定版本的标识符。这可以让缓存更高效，并节省带宽，因为如果内容没有改变，Web服务器不需要发送完整的响应。而如果内容发生了变化，使用 ETag 有助于防止资源的同时更新相互覆盖（“空中碰撞”）。
+
+`Etag` 是一种数字签名，类似于指纹。如果给定URL中的资源更改，则一定要生成新的Etag值，一般是通过某种算法计算的哈希值。
+
+`Etag` 一般配合请求头的 `If-Match` 或 `If-None-Match` 使用，进行比较。
+
+语法：
+```
+ETag: "<etag_value>"
+```
+
+- `etag_value`：实体标签唯一地表示所请求的资源。
+
+举例：
+```js
+if (request.url === '/script.js') {
+  const headers = request.headers
+  // Etag 配合 if-none-match 使用，进行二者的比较
+  const etag = headers['if-none-match']
+  if (etag === '999') {
+    // 验证通过，服务端资源没有修改，可使用缓存（304 Not Modified）
+    response.writeHead(304, {
+      'Content-Type': 'application/javascript',
+      'Cache-Control': 'max-age=10000, no-cache',
+      'Last-Modified': '123',
+      'Etag': '999'
+    })
+    // 下面这行不会作为响应返回
+    response.end('console.log("这个不会作为响应数据返回")')
+  } else {
+    // 验证未通过，不可使用缓存，应响应服务端数据（200 ok）
+    response.writeHead(200, {
+      'Content-Type': 'application/javascript',
+      'Cache-Control': 'max-age=10000, no-cache',
+      'Last-Modified': '123',
+      'Etag': '999'
+    })
+    response.end('console.log("这个会作为响应数据返回")')
+  }
+}
+```
+
+推荐阅读：
+- [MDN Last-Modified](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Last-Modified)
+- [MDN Etag](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/ETag)
+- [MDN 304 Not Modified](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/304)
+
+## 6. 强缓存与协商缓存
+
+缓存可以分为两种：
+- 强缓存
+- 协商缓存
+
+### 强缓存
+
+**不会向服务器发送请求，直接从缓存中读取资源**，在chrome控制台的Network选项中可以看到该请求返回200的状态码，并且 size 显示 from disk cache 或 from memory cache 两种（灰色表示缓存），一般耗时为0或者几毫秒。
+
+相应的 Response header：
+- `Expires`：response header 里的过期时间，浏览器再次加载资源时，如果在这个过期时间内，则命中强缓存。
+- `Cache-Control`:当值设为 `max-age=300` 时，则代表在这个请求正确返回时间（浏览器也会记录下来）的 5 分钟内再次加载资源，就会命中强缓存。
+
+示例：
+```
+Expires: Wed, 21 Oct 2015 07:28:00 GMT
+```
+
+注意：
+- `Expires` 是 http/1.0 的产物，Cache-Control是 http/1.1 的产物
+- 两者同时存在的话，`Cache-Control` 优先级高于 `Expires`
+- `Expires` 其实是过时的产物，现阶段它的存在只是 **一种兼容性的写法**。
+
+### 协商缓存
+
+向服务器发送请求，服务器会根据这个请求的 request header 的一些参数来判断是否命中协商缓存，如果命中，则返回 304 状态码并带上新的 response header 通知浏览器从缓存中读取资源；若未命中，则返回 200 状态码与新的响应数据。
+
+相应的 HTTP header，这两种方式都在前文讲过。
+- `ETag` 和 `If-None-Match`
+- `Last-Modified` 和 `If-Modified-Since`
+
+其中，`Etag` 和 `Last-Modified` 是响应头字段，`If-None-Match` 和 `If-Modified-Since` 是条件式请求头字段。
+
+建议阅读：
+- [MDN Expires](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Expires)
+- [知乎 HTTP 缓存机制](https://zhuanlan.zhihu.com/p/58685072)
+
+## 7. Cookie
+
+### Cookie 的定义
+
+HTTP Cookie（也叫 Web Cookie 或浏览器 Cookie）是 **服务器发送到用户浏览器并保存在本地的一小块数据**，它会在 **浏览器下次向同一服务器再发起请求时被携带并发送到服务器上**。通常，它用于告知服务端两个请求是否来自同一浏览器，如保持用户的登录状态。**Cookie 使基于无状态的HTTP协议记录稳定的状态信息成为了可能**。
+
+Cookie 主要用于以下三个方面：
+- 会话状态管理（如用户登录状态、购物车、游戏分数或其它需要记录的信息）
+- 个性化设置（如用户自定义设置、主题等）
+- 浏览器行为跟踪（如跟踪分析用户行为等）
+
+举例，使用 nodejs http 模块设置 cookie：
+```js
+if (req.headers.host === 'test.com:8888') {
+  resp.writeHead(200, {
+    'Content-Type': 'text/html',
+    // # 可设置一个或多个 cookie
+    // # 通过设置 max-age=<seconds> 或者 expires 来设置cookie的过期时间
+    // # 可设置 HttpOnly，从而禁 JS 获取到 cookie（document.cookie）
+    // 'Set-Cookie': ['id=12345; max-age=10', 'abc=777']
+    // # 设置某域名下的二级域名也能访问到 cookie
+    'Set-Cookie': ['id=12345; max-age=100', 'abc=777; domain=test.com']
+  })
+}
+```
+
+### 定义 Cookie 的生命周期
+
+- 会话期 Cookie   
+  最简单的 Cookie：浏览器关闭之后它会被自动删除，也就是说它仅在会话期内有效。
+- 持久性 Cookie   
+  生命周期取决于过期时间（`Expires`）或有效期（`Max-Age`）指定的一段时间。
+
+### 限制访问 Cookie
+
+有两种方法可以确保 Cookie 被安全发送，并且不会被意外的参与者或脚本访问：
+- `Secure` 属性  
+  标记为 Secure 的 Cookie 只应通过被 HTTPS 协议加密过的请求发送给服务端，但即便设置了 Secure 标记，敏感信息也不应该通过 Cookie 传输，因为 Cookie 有其固有的不安全性
+- `HttpOnly` 属性  
+  JavaScript `document.cookie` 无法访问带有 HttpOnly 属性的cookie；此类 Cookie 仅作用于服务器。例如，持久化服务器端会话的 Cookie 不需要对 JavaScript 可用，而应具有 HttpOnly 属性。**此预防措施有助于缓解跨站点脚本（XSS） (en-US)攻击**。
+
+### Cookie 的作用域
+
+`Domain` 和 `Path` 标识定义了 Cookie 的作用域：即允许 Cookie 应该发送给哪些URL。
+
+#### Domain 属性
+
+`Domain` 指定了哪些主机可以接受 Cookie。
+- 如果不指定，默认为 origin，不包含子域名。
+- 如果 **指定了 Domain，则一般包含子域名**。 
+
+例如设置 `Domain=test.com`，`a.test.com` 和 `b.test.com` 都能访问到 Cookie。
+
+#### Path 属性
+
+`Path` 标识指定了主机下的哪些路径可以接受 Cookie（该 URL 路径必须存在于请求 URL 中）。以字符 `/` 作为路径分隔符，**子路径也会被匹配**。
+
+例如，设置 `Path=/docs`，则以下地址都会匹配：
+
+- `/docs`
+- `/docs/Web/`
+- `/docs/Web/HTTP`
+
+推荐阅读：
+- [MDN Cookies](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Cookies)
+
+## 8. Cookie、Session 和 Token
+
+### Cookie
+
+前面已经提到过，`Cookie` 服务器发送到用户浏览器并保存在本地的一小块数据，它会在 浏览器下次向同一服务器再发起请求时被携带并发送到服务器上。
+
+前面也提到过 `Cookie` 具有一种固有的不安全性，所以就 `Session` 就出现了。
+
+### Session
+
+客户端请求服务端，服务端会为这次请求开辟一块内存空间，这个对象便是 `Session` 对象，存储结构为 ConcurrentHashMap。Session 弥补了 HTTP 无状态特性，服务器可以利用 Session 存储客户端在同一个会话期间的一些操作记录。
+
+服务器第一次接收到请求时，开辟了一块 `Session` 空间（创建了Session对象），同时生成一个 `SessionId`。然后通过服务端响应头的 `Set-Cookie` 设置 `Set-Cookie：SESSIONID=XXXXXXX`。客户端接收到响应后，会在本机设置 `Cookie`。
+
+接下来客户端每次向同一个网站发送请求时，请求头都会带上该 `Cookie` 信息（包含 `SessionId`）， 然后，服务器通过读取请求头中的 `Cookie` 信息，获取名称为 `SESSIONID` 的值，得到此次请求的 `SessionId`。
+
+#### Session 的缺点
+
+`Session` 一般存储在服务器或数据库，当用户访问量过大时，服务器存储容量或者数据库容量不够。另外，就算分了很大服务器存储 `Session`，那不同服务器之间共享 `Session` 也是个问题。比如 A 服务器存储了 Session，就是做了负载均衡后，假如一段时间内 A 的访问量激增，会转发到 B 进行访问，但是 B 服务器并没有存储 A 的 Session，会导致 Session 的失效。
+
+之后出现的 `Token` 解决了这一问题。
+
+### Token
+
+`Token` 即 `Json Web Tokens`，简称 `JWT`，又叫做 `Json 令牌`。它是 RFC 7519 中定义的用于安全的将信息作为 Json 对象进行传输的一种形式。JWT 中存储的信息是经过数字签名的，因此可以被信任和理解。
+
+服务端生成 `JWT`，然后只需要把 **数字签名密文** 保存起来，然后把 `JWT` 传给浏览器，浏览器通过 `Cookies` 或者 `Storage` 的形式存储下来。然后用户每次发送请求都把这个 JWT 发送给服务器，和 Session 类似，只是 JWT 存储在客户端，Session 存储在服务端。
+
+#### JWT 的格式
+
+JWT 主要由三部分组成，每个部分用 . 进行分割，各个部分分别是
+
+```
+Header.Payload.Signature
+```
+
+- `header`：存储算法，base64 编码后的
+- `payload`：存储数据，base64 编码后的
+- `signature`：由 header 中的算法结合前面的两段编码生成，加密签名。
+
+`JWT` 和 `Session Cookies` 都提供安全的用户身份验证，都有过期时间（生命周期）。
+
+区别：
+- sessionid是存在服务器内存里，session保存的用户信息存在服务器内存或数据库，
+- cookie接收保存服务器发来的sessionid，然后每次浏览器发送请求就会带上cookie的数据。
+- token是服务器加密的用户信息，服务器将token发给浏览器，浏览器用cookie或storage保存cookie。然后浏览器每次发送请求就带上token，服务器将其解密并确认用户登录。
+
+推荐阅读：
+- [Session、Cookie、Token 【浅谈三者之间的那点事】](https://cloud.tencent.com/developer/article/1704064)
+- [B站 Cookie、Session、Token究竟区别在哪？](https://www.bilibili.com/video/BV1ob4y1Y7Ep)
+
+## 9. HTTP 短连接与长连接
+
+HTTP 的传输协议主要依赖于 TCP 来提供从客户端到服务器端之间的连接。在早期，HTTP 使用一个简单的模型来处理这样的连接。这些连接的生命周期是短暂的：**每发起一个请求时都会创建一个新的连接，并在收到应答时立即关闭**。
+
+有两个新的模型在 HTTP/1.1 诞生了。
+- 首先是 **长连接** 模型，它会保持连接去完成多次连续的请求，减少了不断重新打开连接的时间。- 然后是 HTTP **流水线**模型，它还要更先进一些，多个连续的请求甚至都不用等待立即返回就可以被发送，这样就减少了耗费在网络延迟上的时间。
+
+![HTTP1.1](https://media.prod.mdn.mozit.cloud/attachments/2016/08/11/13727/7bcf4a6223bb4601ef809ca5eb84b356/HTTP1_x_Connections.png)
+
+- HTTP/1.0 的默认是短连接（Short-lived Connection）(如果没有指定 `Connection` 协议头，或者是值被设置为 `close`)。
+- 在 HTTP/1.1 中，默认值是长连接（Persistent-lived Connection）只有当 `Connection` 被设置为 `close` 时才会用到这个模型。
+
+> [!TIP]
+> 在 HTTP/2 中，`Connection` 头被忽略，因为有 **多路复用** 技术来进行连接管理。
+
+### 短连接
+
+HTTP 最早期的模型，也是  HTTP/1.0 的默认模型，是短连接。每一个 HTTP 请求都由它自己独立的连接完成；这意味着发起每一个 HTTP 请求之前都会有一次 TCP 握手，而且是连续不断的。
+
+这样显然不合理，会消耗很多网络资源。
+
+### 长连接
+
+为了缓解这些问题，长连接 的概念便被设计出来了，（在 HTTP/1.1 之前就有这样的概念）。或者这被称之为一个 `keep-alive` 连接。
+
+长连接的特点：
+- 一个长连接会保持一段时间，**重复用于发送一系列请求，节省了新建 TCP 连接握手的时间**，还可以利用 TCP 的性能增强能力。
+- 当然这个连接也不会一直保留着：**连接在空闲一段时间后会被关闭**（服务器可以使用 Keep-Alive 协议头来指定一个最小的连接保持时间)。
+
+### Connection
+
+`Connection` 头（header） 决定当前的事务完成后，是否会关闭网络连接。如果该值是`keep-alive`，网络连接就是持久的，不会关闭，使得 **对同一个服务器的请求可以继续在该连接上完成**。
+
+HTTP/1.1 的通用首部（General heade）字段 `Connection` 的默认值为 `keep-alive`，也就是说默认是长连接。
+
+语法：
+```
+# 设置持久性连接，HTTP/1.1 默认值
+Connection: keep-alive 
+# 关闭长连接 # HTTP/1.0 默认值
+Connection: close
+```
+
+推荐阅读：
+- [MDN HTTP 连接管理](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Connection_management_in_HTTP_1.x)
+- [MDN HTTP header](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Connection)
+
+### Keep-Alive
+
+`Keep-Alive` 是一个通用消息头，允许消息发送者暗示连接的状态，还可以用来设置超时时长和最大请求数。
+
+> [!TIP]
+> 需要将 `Connection` 首部的值设置为 `"keep-alive"` 这个首部才有意义。同时需要注意的是，在 HTTP/2 协议中， `Connection` 和 `Keep-Alive`  是被忽略的；在其中采用其他机制来进行连接管理。
+
+语法：
+```
+Keep-Alive: timeout=5, max=1000
+```
+
+- `timeout`：指定了一个空闲连接需要保持打开状态的最小时长（以秒为单位）。
+- `max`：在连接关闭之前，在此连接可以发送的请求的最大值。
+
+推荐阅读：
+- [MDN Keep-Alive header](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Keep-Alive)
+
+## 10. 数据协商
+
+### 客户端响应头
+
+#### Accept
+
+`Accept` 请求头用来告知（服务器）客户端可以处理的内容类型，这种内容类型用 `MIME` 类型来表示。
+
+```
+Accept: text/html
+Accept: image/*
+Accept: text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8
+```
+
+####  Accept-Encoding
+
+HTTP 请求头 `Accept-Encoding` 会将客户端能够理解的内容编码方式——通常是某种压缩算法——进行通知（给服务端）。
+
+通过内容协商的方式，服务端会选择一个客户端提议的方式，使用并在响应头 `Content-Encoding` 中通知客户端选择了哪一种编码方式，从而客户端能够解码。
+
+```
+Accept-Encoding: gzip
+Accept-Encoding: compress
+Accept-Encoding: deflate
+Accept-Encoding: br
+Accept-Encoding: identity
+Accept-Encoding: *
+```
+
+#### Accept-Language
+
+`Accept-Language` 请求头允许客户端声明它可以理解的自然语言，以及优先选择的区域方言。服务器可以从诸多备选项中选择一项进行应用， 并使用 `Content-Language` **应答头通知客户端它的选择**。
+
+```
+Accept-Language: en-US,en;q=0.5
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+```
+
+#### User-Agent
+
+`User-Agent` 首部包含了一个特征字符串，用来让网络协议的对端来识别发起请求的用户代理软件的应用类型、操作系统、软件开发商以及版本号。
+
+格式：
+```
+User-Agent: Mozilla/<version> (<system-information>) <platform> (<platform-details>) <extensions>
+```
+例如：
+```
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36
+```
+
+> [!warning]
+> 为不同浏览器提供不同的网页或服务通常是一个坏主意。互联网的本意是让任何人都可以访问，无论他们使用哪个浏览器或设备。有一些方法可以根据功能的可用性而不是针对特定的浏览器来开发您的网站以逐步增强自身。
+
+#### X-Content-Type-Options
+
+`X-Content-Type-Options` HTTP 消息头相当于一个提示标志，被服务器用来提示客户端一定要遵循在 Content-Type 首部中对  MIME 类型 的设定，而不能对其进行修改。**这就禁用了客户端的 MIME 类型嗅探行为**，换句话说，也就是意味着网站管理员确定自己的设置没有问题。
+
+这是一种安全功能，有助于 **防止基于 MIME 类型混淆的攻击**。通过设置 `X-Content-Type-Options: nosniff` 响应头，对 script 和 styleSheet 在执行是通过 MIME 类型来过滤掉不安全的文件。
+
+### 实体响应头
+
+#### Content-Type
+
+Content-Type 实体头部用于指示资源的 MIME 类型 media type。
+
+在响应中，`Content-Type` 标头告诉客户端实际返回的内容的内容类型。浏览器会在某些情况下进行MIME查找，并不一定遵循此标题的值; 为了防止这种行为，可以将标题 `X-Content-Type-Options` 设置为 `nosniff`。
+
+#### Content-Language
+
+`Content-Language` 是一个 entity header（实体消息首部），用来说明访问者希望采用的语言或语言组合，这样的话用户就可以根据自己偏好的语言来定制不同的内容。
+
+#### Content-Encoding
+
+`Content-Encoding` 是一个实体消息首部，用于对特定媒体类型的数据进行压缩。当这个首部出现的时候，它的值表示消息主体进行了何种方式的内容编码转换。这个消息首部用来 **告知客户端应该怎样解码** 才能获取在 `Content-Type` 中标示的媒体类型内容。
+
+```
+Content-Encoding: gzip
+Content-Encoding: deflate
+Content-Encoding: br
+```
+
+## 11. CSP 
+
+内容安全策略（CSP）是一个额外的安全层，用于检测并削弱某些特定类型的攻击，包括 **跨站脚本（XSS） 和数据注入攻击** 等。无论是数据盗取、网站内容污染还是散发恶意软件，这些攻击都是主要的手段。
+
+### Content-Security-Policy
+
+HTTP 响应头 `Content-Security-Policy` 允许站点管理者控制用户代理能够为指定的页面加载哪些资源。除了少数例外情况，设置的政策主要涉及指定服务器的源和脚本结束点。这将帮助防止跨站脚本攻击（CSS，Cross-Site Script）
+
+
+示例：禁用不安全的内联/动态执行, 只允许通过 https 加载这些资源 (images, fonts, scripts, etc.)
+```
+// header
+Content-Security-Policy: default-src https:
+
+// meta tag
+<meta http-equiv="Content-Security-Policy" content="default-src https:">
+```
+
+### HTTP Content-Security-Policy-Report-Only
+
+`HTTP Content-Security-Policy-Report-Only` 响应头允许 web 开发人员通过监测（但不强制执行）政策的影响来尝试政策。这些违反报告由 JSON 文档组成通过一个 HTTP POST 请求发送到指定的 URI。
+
+可以设置在接收到不符合条件资源的时候，发起一个 `report` 给服务器，检测这些不安全资源的一些信息。
+
+html 不可设置此消息头。

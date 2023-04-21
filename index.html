@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>George's Notes</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Description">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/themes/vue.css" />
+  <link rel="icon" href="image/icon.jpeg" sizes="114x114" type="image/jpeg " />
+  <link rel="stylesheet" href="https://unpkg.com/@waline/client@v2/dist/waline.css" />
+  <script src="https://unpkg.com/@waline/client@v2/dist/waline.js"></script>
+  <style>
+
+  </style>
+
+</head>
+
+<body>
+  <div id="app"></div>
+  <!-- <div id="waline"></div> -->
+  <script>
+    window.$docsify = {
+      el: '#app',
+      name: "George's Notes",
+      repo: 'https://gitee.com/pyinstaller/test',
+      loadSidebar: true,
+      subMaxLevel: 3,
+      // coverpage: true,
+      loadNavbar: true,
+      auto2top: true,
+      maxLevel: 4,      //可配置最大支持渲染的标题层级
+      search: 'auto',
+      search: {
+        maxAge: 86400000,
+        placeholder: '搜索',
+        noData: '找不到结果',
+        hideOtherSidebarContent: false,
+        namespace: 'docsify-demo'
+      },
+      count: {
+        countable: true,
+        fontsize: '0.9em',
+        color: 'rgb(90,90,90)',
+        language: 'chinese'
+      },
+      'flexible-alerts': {
+        style: 'flat'
+      },
+      footer: {
+        copy: 'Copyright &copy; 2022  </span>',
+        auth: ' <>-至今🎅George-一个人可以走的很快，但一群人才能走的更远！</>',
+        pre: '<hr/>',
+        style: 'text-align: center;',
+      },
+      waline: {
+        // Required example：https://your-domain.vercel.app
+        serverURL: "https://comment.qiaohao.xyz/",
+        // enable pageview count
+        pageview: true,
+        // ...
+        // don't support custom `el` and `path`
+      },
+
+      // count: {
+      //   countable: true,
+      //   fontsize: '0.9em',
+      //   color: 'rgb(90,90,90)',
+      //   language: 'chinese'
+      // },
+      // Valine: {
+      //   appId: '5NufTOH2LT8vML3d2RiToJLG-gzGzoHsz',
+      //   appKey: 'SwC7ErRPmhsWI3Vn10YBhsmG'
+      // },
+      // plugins: [
+      //   /*来必力评论*/
+      //   function (hook, vm) {
+      //     // load livere
+      //     hook.beforeEach(function (content) {
+      //       var comment = "<div id='lv-container' data-id='city' data-uid='MTAyMC80MzA4MC8xOTYyNg=='></div>\n\n----\n"
+      //       return content + comment;
+      //     });
+
+      //     hook.doneEach(function () {
+      //       (function (d, s) {
+      //         var j, e = d.getElementsByTagName(s)[0];
+      //         if (typeof LivereTower === 'function') { return; }
+      //         j = d.createElement(s);
+      //         j.src = './Libs/embed.dist.js';
+      //         j.async = true;
+      //         e.parentNode.insertBefore(j, e);
+      //       })(document, 'script');
+      //     });
+      //   },
+      // ]
+
+    }
+  </script>
+  <!-- <script>
+    Waline.init({
+      el: '#waline',
+      serverURL: 'https://comment.qiaohao.xyz/',
+    });
+  </script> -->
+  <!-- Docsify v4 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify"></script>
+  <script
+    src="//cdn.jsdelivr.net/npm/docsify-plugin-flexible-alerts/dist/docsify-plugin-flexible-alerts.min.js"></script>
+  <script
+    src="https://unpkg.com/docsify-plugin-flexible-alerts@1.1.0/dist/docsify-plugin-flexible-alerts.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+  <!-- 搜索功能 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <!-- 复制代码到剪切板 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
+  <!-- <script src="./libs/docsify-scroll-to-top.min.js"></script>
+  <script src="https://unpkg.com/docsify-tabs@1.5.2/dist/docsify-tabs.min.js"></script>
+  <script src="./libs/docsify-katex.js"></script> -->
+  <!-- 置顶插件 -->
+  <script src="https://notebook.js.org/plugin/jquery.js"></script>
+  <script src="https://notebook.js.org/plugin/jquery.goup.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $.goup({
+        trigger: 100,
+        bottomOffset: 52,
+        locationOffset: 25,
+        //title: 'TOP',
+        titleAsText: true
+      });
+    });
+  </script>
+  </script>
+  <!-- docsify表情包 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
+  <!-- C++、Java、python、bash等等语法高亮 -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-java.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-cpp.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-c.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-javascript.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-css.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-powershell.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-sql.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-yaml.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/prism-properties.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs/components/matlab.min.js"></script>
+  <!-- 文档页脚增强 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-footer-enh/dist/docsify-footer.min.js"></script>
+  <!-- CDN files for docsify-katex -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"></script>
+  <!-- 访问量统计 -->
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <!-- 分页导航插件 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+  <!-- 字数统计插件 -->
+  <script src="//unpkg.com/docsify-count/dist/countable.js"></script>
+  <!-- 点击页面出现爱心 -->
+  <script src="//cdn.jsdelivr.net/gh/jerryc127/butterfly_cdn@2.1.0/js/click_heart.js"></script>
+  <!-- 分享插件 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/external-script.min.js"></script>
+  <!-- 评论 -->
+  <!-- <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/gitalk.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+  <script>
+    const gitalk = new Gitalk({
+      clientID: '393a43a84bf4828a740b',
+      clientSecret: 'cd9807d66bd8e1e6d17d56525b37698eeb156be3',
+      repo: 'docs',
+      owner: 'King0420',
+      admin: ['King0420'],
+      // facebook-like distraction free mode
+      distractionFreeMode: false,
+      // id: decodeURI(window.location.pathname)
+    })
+  </script> -->
+  <!-- live2d -->
+  <script src="https://eqcn.ajz.miesnfu.com/wp-content/plugins/wp-3d-pony/live2dw/lib/L2Dwidget.min.js"></script>
+  <script>
+    L2Dwidget.init({
+      "model": {
+        //jsonpath控制显示那个小萝莉模型，
+        //(切换模型需要改动)
+        jsonPath: "https://unpkg.com/live2d-widget-model-koharu@1.0.5/assets/koharu.model.json",
+        "scale": 1
+      },
+      "display": {
+        "position": "right", //看板娘的表现位置
+        "width": 70,  //小萝莉的宽度
+        "height": 140, //小萝莉的高度
+        "hOffset": 35,
+        "vOffset": -20
+      },
+      "mobile": {
+        "show": true,
+        "scale": 0.5
+      },
+      "react": {
+        "opacityDefault": 0.7,
+        "opacityOnHover": 0.2
+      }
+    });
+  </script>
+  <!-- 评论 -->
+  <!-- <script src="https://unpkg.com/@waline/client@v2/dist/waline.js"></script> -->
+  <!-- <script src="https://unpkg.com/docsify-waline@2/docsify-waline.min.js"></script> -->
+  <script src="./Libs/min.js"></script>
+
+
+
+</body>
+
+</html>

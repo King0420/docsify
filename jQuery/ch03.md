@@ -1,0 +1,132 @@
+# （三）jQuery 事件
+
+## 1. 事件注册
+
+语法：
+```js
+element.事件(function () {})
+```
+```js
+$('div').click(function () { 事件处理程序 })
+```
+
+其他事件和原生基本一致。
+比如 `mouseover`、`mouseout`、`blur`、`focus`、`change`、`keydown`、`keyup`、`resize`、`scroll` 等
+
+## 2. 事件处理
+
+### 2.1 事件处理 on() 绑定事件
+
+`on()` 方法在匹配元素上绑定一个或多个事件的事件处理函数。
+语法：
+```js
+element.on(events, [selector], fn)
+```
+
+- `events`：一个或多个用空格分隔的事件类型，如 `'click'` 或 `'keydown'`。
+- `selector`：元素的子元素选择器。
+- `fn`：回调函数，即绑定在元素身上的侦听函数。
+
+#### （1）`on()` 方法-绑定多个事件
+
+可以绑定多个事件，多个处理事件处理程序。
+```js
+ $('div').on({
+    mouseover: function(){},
+    mouseout: function(){},
+    click: function(){}
+});
+```
+
+如果事件处理程序相同：
+```js
+$('div').on('mouseover mouseout', function() {
+    $(this).toggleClass('current');
+}); 
+```
+
+#### （2）`on()` 方法事件委派
+
+可以事件委派操作 。事件委派的定义就是，把原来加给子元素身上的事件绑定在父元素身上，就是把事件委派给父元素。这样就不要给多个子元素多次绑定事件了。
+```js
+$('ul').on('click', 'li', function() {
+    alert('hello world!');
+});
+```
+
+在此之前有 `bind()`、 `live()`、`delegate()` 等方法来处理事件绑定或者事件委派，最新版本的请用 `on` 替代他们。
+
+#### （3）`on()` 方法给动态元素绑定事件
+
+动态创建的元素（暂时还没创建未来即将创建），`click()` 没有办法绑定事件， `on()` 可以给动态生成的元素绑定事件。
+
+```js
+$('div').on('click', 'p', function(){
+    alert('俺可以给动态生成的元素绑定事件')
+});
+```
+
+```js
+$('div').append($('<p>我是动态创建的p</p>'));
+```
+
+### 2.2 事件处理 off() 解绑事件
+
+`off()` 方法可以移除通过 `on()` 方法添加的事件处理程序。
+
+```js
+// 解绑p元素所有事件处理程序
+$('p').off()
+
+// 解绑p元素上面的点击事件
+$('p').off( 'click') 
+
+// 解绑事件委托
+$('ul').off('click', 'li')
+```
+
+如果有的事件只想触发一次， 可以使用 `one()` 来绑定事件。
+
+### 2.3 自动触发事件 trigger()
+
+有些事件希望自动触发, 比如轮播图自动播放功能跟点击右侧按钮一致。可以利用定时器自动触发右侧按钮点击事件，不必鼠标点击触发。  
+
+1. 简写形式
+    ```js
+    element.click()  
+    ```
+
+2. 自动触发模式
+    ```js
+    element.trigger('type')
+    ```
+    举例：
+    ```js
+    $('p').on('click', function () {
+    alert('hi~');
+    }); 
+    // 此时自动触发点击事件，不需要鼠标点击
+    $('p').trigger('click'); 
+    ```
+
+3. 自动触发模式  
+    `triggerHandler` 模式 **不会触发元素的默认行为**，这是和前面两种的区别。
+    ```js
+    element.triggerHandler('type') 
+    ```
+
+## 3. 事件对象
+
+事件被触发，就会有事件对象的产生。
+
+```js
+element.on(events,[selector],function(event) {})
+```
+
+阻止默认行为：
+    - `event.preventDefault()`
+    - `return false`
+阻止冒泡： `event.stopPropagation()`
+
+> [!TIP]
+> 详情见：[JS DOM 阻止事件冒泡](https://docs.mphy.top/#/WebApi/ch03?id=_5-%e9%98%bb%e6%ad%a2%e4%ba%8b%e4%bb%b6%e5%86%92%e6%b3%a1)

@@ -1,0 +1,537 @@
+# （二）DOM 基础
+
+## 1. DOM 简介
+
+### 1.1 什么是 DOM
+
+文档对象模型（Document Object Model，简称DOM )，是W3C组织推荐的处理可扩展标记语言（HTML或者XML)的标准编程接口。
+
+W3C已经定义了一系列的DOM接口，通过这些DOM接口可以改变网页的内容、结构和样式。
+
+### 1.2 DOM 树
+
+- 文档：一个页面就是一个文档，DOM中使用document表示
+- 元素：页面中的所有标签都是元素，DOM中使用element表示
+- 节点：网页中的所有内容都是节点（标签、属性、文本、注释等），DOM中使用node表示
+
+以上内容都称之为对象
+
+## 2. 获取元素
+
+### 2.1 如何获取页面元素
+
+DOM 在我们实际开发中主要用来操作元素。我们如何来获取页面中的元素呢?
+
+获取页面中的元素可以使用以下几种方式:
+- 根据ID获取
+- 根据标签名获取
+- 通过HTML5新增的方法获取
+- 特殊元素获取
+
+### 2.2 根据 ID 获取
+
+使用 `getElementByld()` 方法可以获取带有 ID 的元素对象，并返回一个 `Element` 对象。
+
+- `console.dir()` 可打印元素的属性和方法
+
+### 2.3 根据标签名获取
+
+使用 `getElementsByTagName()` 方法可以返回带有指定标签名的对象的集合。
+
+- 返回的是 **元素对象的集合，伪数组形式表示**。
+- 可以遍历返回的伪数组。
+- 得到的元素对象是动态的。
+- 若没有元素，则返回空的伪数组 `[]`。
+
+指定父元素，父元素必须是指定的单个元素。
+
+```js
+let ol = document.getElementsByTagName('ol');
+console.log(ol[0].getElementsByTagName('li'));
+```
+
+若给 `ol` 指定了 id: `ol`:
+
+```js
+let ol = document.getElementById('ol');
+console.log(ol.getElementsByTagName('li');
+```
+
+### 2.4 通过 HTML5 新增方法获取
+
+1. 根据类名返回元素对象集合。
+    ```js
+    document.getElementsByClassName('类名'); 
+    ```
+
+2. 根据指定选择器返回第一个元素对象。
+    ```js
+    document.querySelector('选择器'); 
+    ```
+
+3. 返回指定选择器的所有元素集合。
+    ```js
+    document.querySelectorAll('选择器') 
+    ```
+
+> [!TIP]
+> 对于这些获取事件，要不就是返回一个元素对象，要不就是返回一个对象集合。对于返回的对象集合，都可以是作为一种伪数组，可以通过 `elems.length` 来获取元素对象个数。
+
+### 2.5 获取特殊元素
+
+1. 获取 `body` 元素
+    ```js
+    document.body;
+    ```
+
+2. 获取 `html` 元素
+    ```js
+    document.documentElement;
+    ```
+
+## 3. 事件基础
+
+### 3.1 事件概述
+
+JavaScript 使我们有能力创建动态页面，而事件是可以被 JavaScript 侦测到的行为。
+
+简单理解︰触发--响应机制。
+
+网页中的每个元素都可以产生某些可以触发 JavaScript 的事件，例如，我们可以在用户点击某按钮时产生一个事件，然后去执行某些操作。
+
+### 3.2 事件三要素
+
+- 事件源：事件被触发的对象（按钮）。
+- 事件类型：如何触发、什么事件（点击按钮）。
+- 事件处理程序：可通过一个函数赋值的方式实现。
+
+1. 获取事件源
+    ```html
+    <button id="btn">唐伯虎</button>
+    ```
+2. 注册事件
+    ```js
+     let btn = document.getElementById('btn');
+    ```
+3. 添加事件处理程序
+    ```js
+    btn.onclick = () => alert('点秋香');
+    ```
+
+> [!TIP]
+> 执行事件的步骤
+> 1. 获取事件源
+> 2. 注册事件（绑定事件）
+> 3. 添加事件处理程序（函数赋值）
+
+### 3.4 常见鼠标事件
+
+|鼠标事件|触发条件|
+|-|-|
+|`onclick`|鼠标点击左键触发|
+|`onmouseover`|鼠标经过触发|
+|`onmouseout`|鼠标离开触发|
+|`onfocus`|获得鼠标焦点触发|
+|`onblur`|失去鼠标焦点触发|
+|`onmousemove`|鼠标移动触发|
+|`onmouseup`|鼠标弹起触发|
+|`onmousedown`|鼠标按下触发|
+
+## 4. 操作元素
+
+使用 JavaScript DOM 可以改变网页内容、结构和样式。以下是元素的属性。
+
+### 4.1 改变元素内容
+
+从起始位置到终止位置的内容,但它去除html标签，同时空格和换行也会去掉
+
+```js
+element.innerText
+```
+
+起始位置到终止位置的全部内容，包括html标签，同时保留空格和换行
+
+```js
+element.innerHTML
+```
+
+### 4.2 innerText 和 innerHTML 的区别
+
+1. `innerText` 不识别 html 标签，`innerHTML` 识别 html 标签。
+    ```js
+    div.innerHTML = ' <strong>今天是：</strong>2021-3-23';
+    ```
+2. `innerText` 会取出空格和换行，`innerHTML` 保留换行和空格。
+
+### 4.3 常用元素的属性操作
+
+
+1. `innerText`、`innerHTML` 改变元素内容
+2. `src`、`href`
+3. `id`、`alt`、`title`
+
+
+示例
+
+```js
+let vsc = document.getElementById('vsc');
+let zh = document.getElementById('zh');
+let img = document.querySelector('img');
+vsc.onclick = () => {
+    img.src = 'images/vscode.jpg';
+    img.title = 'vscode';
+}
+```
+
+### 4.4 表单元素的属性操作
+
+利用 DOM 可以操控以下表单元素的属性。
+
+```
+type, value, checked, selected, disabled
+```
+
+### 4.5 样式属性操作
+
+我们可以通过JS修改元素的大小、颜色、位置等样式。
+
+1. `element.style`：行内样式操作
+2. `element.className`：类名样式操作
+
+
+> [!tip]
+> 1. Js 里面的样式采取驼峰命名法比如 `fontSize`、`backgroundColor`
+2. JS修改 `style` 样式操作，产生的是行内样式，css 权重比较高
+3. 如果样式修改较多，可以采取操作类名方式更改元素样式
+4. class 因为是个保留字，因此使用 `className` 来操作元素类名属性
+5. `className` 会直接更改元素的类名，会覆盖原先的类名。
+
+### 4.6 排他思想
+
+如果有同一组元素，我们想要某一个元素实现某种样式，需要用到循环的排他思想算法：
+
+1. 所有元素全部清除样式（干掉其他人）
+2. 给当前元素设置样式（留下我自己）
+3. 注意顺序不能颠倒，首先干掉其他人，再设置自己。
+
+```js
+ const btns = document.getElementsByTagName('button');
+    for (let i = 0; i < btns.length; i++) {
+        btns[i].onclick = function () {
+            for (let j=0;j<btns.length;j++) {
+                btns[j].style.backgroundColor = '';
+            }
+            this.style.backgroundColor = 'pink';
+        }
+    }
+```
+
+> [!TIP]
+> 根据这个算法可以用来实现鼠标经过每一行时背景变色。
+
+### 4.7 H5自定义属性
+
+自定义属性目的：是为了保存并使用数据，有些数据可以保存到页面中而不用保存到数据库中。
+
+####  4.7.1 设置H5自定义属性
+
+H5规定自定义属性以 `data-` 开头作为属性名并赋值。
+
+```html
+<div data-index="1"></div>
+```
+
+####  4.7.2 获取H5自定义属性
+
+1. 兼容性获取 `element.getAttribute('data-index')`
+2. H5新增方法 `element.dataset.index` 或 `element.dataset['index']` 获取。（>=ie11）
+3. 如果自定义属性里面有多个链接的单词，则使用驼峰命名法获取。
+
+> [!warning]
+> 对于 `element.dataset.index` 和 `element.dataset['index']` 方法，注意 `index` 和 `data-index` 中的要对应。
+
+### 4.8 元素属性操作
+
+#### 4.8.1 获取属性值
+
+- `element.属性`;：一般用于获取本身自带属性值。
+- `element.getAttribute('属性');`：主要获得自定义的属性（标准）我们程序员自定义的属性。
+
+#### 4.8.2 设置属性值
+
+- `element.属性='值';`：设置内置属性值。
+- `element.setAttribute('属性', '值');`：设置自定义属性。
+
+> [!TIP]
+> 对于 `element.setAttribute` 方法，若属已存在，则更新该属性值；否则，创建一个新属性。
+
+```js
+div.setAttribute('index', 1);
+div.setAttribute('class', 'footer');
+```
+
+> [!warning]
+> 使用 `element.属性` 获取或设置类名时，要用 `className`，而对于 `element.setAttribute()` 方法，直接使用 `class`，即：`div.setAttribute('class', 'footer')`。
+
+#### 4.8.3 移除属性
+
+- `element.removeAttribute(属性);`
+
+## 5. 结点操作
+
+### 5.1为什么学节点操作
+
+获取元素通常使用两种方式:
+
+1. 利用DOM提供的方法获取元素，缺点：逻辑性不强、繁琐
+    - `document.getElementByld()`
+    - `document.getElementsByTagName()`
+    - `document.querySelector()`  
+
+2. 利用 **节点层级关系** 获取元素
+    - 利用父子兄节点关系获取元素
+    - 优点：逻辑性强
+    - 缺点：兼容性稍差
+
+### 5.2 节点概述
+
+网页中的所有内容都是节点(标签、属性、文本、注释等），在DOM中，节点使用 `node` 来表示。
+
+HTML DOM 树中的所有节点均可通过 JavaScript 进行访问，所有 HTML 元素（节点）均可被修改，也可以创建或删除。
+
+一般地，节点至少拥有 `nodeType` (节点类型)、`nodeName` (节点名称）和 `nodeValue` (节点值）这三个基本属性。
+
+**三种基本节点类型：**
+- 元素节点 `nodeType` 为 `1`
+- 属性节点 `nodeType` 为 `2`
+- 文本节点 `nodeType` 为 `3`（文字、空格、换行）
+
+实际开发中，主要操作的还是元素节点。
+
+### 5.3 节点层级
+
+#### 5.3.1 父级节点
+
+获取离元素最近的父节点，若找不到则返回 `null`。
+
+```js
+node.parentNode
+```
+
+#### 5.3.2 子节点
+
+```js
+parentNode.childNodes
+```
+
+`parentNode.childNodes` 返回包含指定 **节点的子节点的集合**，该集合为即时更新的集合。
+
+
+> [!warning]
+> 注意：`parentNode.childNodes` 包含了所有的子节点，包括元素节点，文本节点等。
+> 如果只想要获得里面的元素节点，则需要专门处理。所以我们一般不提倡使用 `childNodes`。
+
+```js
+// 筛选元素节点
+for (let i = 0; i < ul.childNodes.length; i++) {
+            if (ul.childNodes[i].nodeType === 1) {
+                console.log(ul.childNodes[i]);
+            }
+        }
+```
+
+**更加好的方法：获取子元素节点**
+
+```js
+parentNode.children;
+```
+
+子节点方法：
+
+① 获取 **所有结点** 中的第一个和最后一个：
+
+- `parentNode.firstChild`
+- `parentNode.lastChild`
+
+② 获取 **元素节点**中第一个和最后一个
+
+- `parentNode.firstElementChild`
+- `parentNode.lastElementChild`
+
+（>=IE9）
+
+③ **实际开发**：
+
+- `parentNode.children[0]`
+- `parentNode.children[parentNode.children.length -1]`
+
+#### 5.3.3 兄弟节点
+
+1. 返回下一个兄弟节点：
+    ```js
+    node.nextSibling
+    ```
+
+2. 返回上一个的兄弟节点：
+    ```
+    node.previousSibling
+    ```
+`nextsibling` / `previousSibling` 返回当前元素的下/上一个兄弟节点，找不到则返回 `null`。这个兄弟节点可能是是所有的节点之一（即元素节点、文本节点等）。
+
+3. 返回下一个 **兄弟元素节点**（≥IE9）
+    ```js
+    node.nextElementSibling
+    ```
+3. 返回上一个 **兄弟元素节点**（≥IE9）
+    ```js
+    node.previousElementSibling
+    ```
+    `nextElementSibling` / `previousElementSibling` 返回当前元素下/上一个兄弟元素节点，找不到则返回 `null`。
+
+> [!warning]
+> 这两个方法（`nextElementSibling` / `previousElementSibling`）有兼容性问题，IE9 以上才支持。
+
+解决方法：封装一个函数。 
+```js
+// 处理 <IE9 兼容性问题
+function getNextElementSibling(node) {
+    let n = node;
+    while (n = n.nextSibling) {
+        if (n.nodeType === 1) {
+            return n;
+        }
+    }
+    return null;
+}
+```
+
+#### 5.3.4 创建并添加节点
+
+```js
+document.createElement("tagName");
+```
+
+`document.createElement()` 方法创建由 `tagName` 指定的 HTML 元素。因为这些元素原先不存在，是根据我们的需求动态生成的，所以我们也称为 **动态创建元素节点**。
+
+在创建了元素节点后，还需要将节点添加到页面中。`appendChild()` 方法可以给元素节点添加子元素节点，若某元素已存在则重复添加，在页面已存在的元素 **后面追加新节点**。
+```js
+ parentNode.appendChild(chileNode)
+```
+
+类似的，也可以使用 `insertBefore()` 方法在指定元素的前面插入节点。
+```js
+let insertedNode = parentNode.insertBefore(newNode, referenceNode)
+```
+
+参数说明：
+- `insertedNode`：同 `newNode`，待插入的新节点。
+- `parentNode`：被插入的父节点。
+- `newNode`：待插入的新节点。
+- `referenceNode`：指定元素节点，新节点将插入到该元素节点的前面。
+
+> [!TIP]
+> 在一个页面中要添加元素节点，先创建节点，然后添加节点。
+
+#### 5.3.5 删除节点
+
+DOM 提供了 `removeChild(childNode)` 方法，删除一个子节点，并返回删除的节点。其中 `childNode` 为待删除的子节点。
+
+```js
+// 方式一
+parentNode.removeChild(childNode);
+// 方式二
+let oldChild = parentNode.removeChild(childNode);
+```
+
+#### 5.3.6 复制节点
+
+`node.cloneNode()` 方法返回调用该方法的节点的一个副本。也称为克隆节点/拷贝节点。其中 `node` 为被克隆的元素节点。
+
+```js
+node.cloneNode([deep]);
+```
+或者
+```js
+let newClone = node.cloneNode([deep]);
+```
+
+对于 `deep` 参数，可以为 `true` 或 `false`，或为空的：
+
+|`deep` 参数值|含义|
+|-|-|
+|`true`|深拷贝，同时复制节点本身和里面的子节点|
+|`false`|浅拷贝，只复制节点本身，不复制子节点|
+|`空`|空，同 `false`|
+
+#### 5.3.7 三种动态创建元素的区别
+
+- `document.write()`
+- `element.innerHTML`
+- `element.createElement()`
+
+区别：
+
+1. `document.write()` 创建元素，是直接将内容写入页面的内容流，但是 **当文档流执行完毕，会导致页面全部重绘**。即覆盖原本的页面。
+2. `innerHTML` 是将内容写入某个 DOM 节点，不会导致页面全部重绘。  
+3. `innerHTML` 创建多个元素效率更高（**不要拼接字符串，采取数组形式拼接**），结构稍微复杂。  
+4. `createElement()` 创建多个元素效率稍低一点点，但是结构更清晰。  
+
+总结：不同浏览器下，`innerHTML` 效率要比 `creatElement`高。
+
+## 6. DOM 学习阶段核心总结
+
+关于 dom 操作，我们主要针对于元素的操作。主要有创（建）、增、删、改、查、属性操作、事件操作。
+
+### 6.1 创
+
+- `document.write`
+- `innerHTML`
+- `createElement`
+
+### 6.2 增
+
+- `appendChild`
+- `insertBefore`
+
+### 6.3 删
+
+- `removeChild`
+
+### 6.4 改
+
+主要修改 dom 的元素属性，dom 元素的内容、属性，表单的值等。
+- 修改元素属性：`src`、`href`、`title` 等
+- 修改普通元素内容：`innerHTML`、`innerText`
+- 修改表单元素：`value`、`type`、`disabled` 等
+- 修改元素样式：`style`、`className`
+
+### 6.5 查
+
+主要获取查询dom的元素
+- DOM提供的API 方法：`getElementById`、`getElementsByTagName`（**古老用法不太推荐**）
+- H5提供的新方法：`querySelector`、`querySelectorAll` 提倡
+- 利用节点操作获取元素：父（`parentNode`)、子（`children`）、兄（`previousElementSibling`、
+`nextElementSibling`）提倡
+
+### 6.6 属性操作
+
+主要针对于自定义属性
+
+- `setAttribute`：设置dom的属性值
+- `getAttribute`：得到dom的属性值
+- `removeAttribute`：移除属性
+
+### 6.7 事件操作
+
+给元素注册事件，格式：`事件源.事件类型 = 事件处理程序`
+
+|鼠标事件|触发条件|
+|-|-|
+|`onclick`|鼠标点击左键触发|
+|`onmouseover`|鼠标经过触发|
+|`onmouseout`|鼠标离开触发|
+|`onfocus`|获得鼠标焦点触发|
+|`onblur`|失去鼠标焦点触发|
+|`onmousemove`|鼠标移动触发|
+|`onmouseup`|鼠标弹起触发|
+|`onmousedown`|鼠标按下触发|

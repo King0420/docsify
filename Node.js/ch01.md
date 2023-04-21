@@ -1,0 +1,211 @@
+# （一）Node.js 初识
+
+## 1. Node.js 诞生史
+
+Node.js之父：Ryan Dahl（瑞安·达尔）  
+
+- 并非科班出身的开发者，在2004年在纽约的罗彻斯特大学数学系读博士。
+- 2006年退学，来到智利的Valparaiso小镇。
+- 期间曾熬夜做了一些不切实际的研究，例如如何通过云进行通信。
+- 偶然的机会，走上了编程之路，生活方式变为接项目，然后去客户的地方工作。
+- 工作中遇到了主流服务器的瓶颈问题，尝试着自己去解决，费尽周折没有办法。
+- 2008年Google公司Chrome V8引擎横空出世，JavaScript脚本语言的执行效率得到质的提升，他的想法与Chrome V8引擎碰撞出激烈的火花。
+- 2009年的2月，按新的想法他提交了项目的第一行代码，这个项目的名字最终被定名为 “node”。
+- 2009年5月，正式向外界宣布他做的这个项目。
+- 2009年底，Ryan Dahl在柏林举行的JSConf EU会议上发表关于Node.js的演讲，之后Node.js逐渐流行于世。
+- Ryan Dahl于2010年加入Joyent公司，全职负责Node.js项目的开发。此时Node.js项目已经从个人项目变成一个公司组织下的项目。
+
+## 2. Node.js 是什么
+
+Node.js 是一个基于 Chrome V8 引擎的 JavaScript 运行环境。  
+
+![node1](https://cdn.jsdelivr.net/gh/Hacker-C/Picture-Bed@main/docs/node1.1ual4a2yhz9c.png)
+
+传统的 JavaScript 只能运行在浏览器端，脱离浏览器不能运行，也就不能操作本地的文件或者创建文件，也不能进行网络编程，Node.js 的出现打破了这一局面。  
+Node.js 编写的代码还是 JS，所以开发者需要利用 Chrome V8 来运行 JS。Node.js 借助了 C/C++ 中的 libuv 库来实现文件读取和事件循环。我们不必深挖其中的原理，只需要知道如何使用就行，Node.js 已经为我们打包好了相关接口。
+
+## 3. Node.js 的特点
+
+### 3.1 优点
+
+- 异步非阻塞的 I/O（I/O线程池）
+- 特别适用于 I/O 密集型应用（对比传统 Java 服务器）
+- 事件循环机制
+- 单线程（成也单线程，败也单线程）
+- 跨平台
+
+解释：
+- 异步非阻塞的 I/O（I/O线程池）  
+    I/O是指inout/ouput，这里是指文件的读写，数据库的操作等等。同步会造成阻塞问题，按照顺序来进行操作。异步是指做这一件事的时候可以做其他事情，非阻塞。  
+    I/O线程池：让一个线程随时随地处于待命状态，以便下次更加快速的执行任务。
+- 特别适用于 I/O 密集型应用  
+    某个项目需要频繁进行I/O操作，就成为I/O 密集型应用。
+- 事件循环机制  
+    Node.js 脱离了浏览器，浏览器有事件循环机制，但 Node.js 也提供了自己的独有的一个事件循环机制。
+- 单线程（成也单线程，败也单线程）  
+    单线程要想实现异步，就必须要有自己的 “事件循环模型”。
+- 跨平台  
+    - JS 跨平台：js——js引擎——由谷歌等设计
+    - java跨平台：java——jvm虚拟机
+    - Node.js 也跨平台
+
+### 3.2 不足之处
+
+- 回调函数嵌套太多、太深（俗称回调地狱）
+- 单线程，处理不好CPU 密集型任务
+
+CPU密集型与IO密集型：
+- CPU 密集型：需要过多判断，要做的事情不明确
+- IO 密集型：事情明确
+
+简单 web 交互模型：  
+![node3](https://cdn.jsdelivr.net/gh/Hacker-C/Picture-Bed@main/docs/node3.5ub7ikpaiq80.png)
+
+Node.js 和 Java 服务器对比：
+- Java 服务器可以有多 “服务员” ，增加服务器空间来实现高并发，成本也高，适用于大企业。
+- Node.js 的服务器只有一个 “服务员”，每次收到任务请求的时候，一对一的服务，向数据库请求数据，通过回调函数实现高并发。适用于 I/O 密集型应用，适用于 **个人或中小型企业或者微信小程序搭建服务器**。
+- 所以对于 CPU 密集型应用，会频繁 “点餐”，这时候一对一的 “Node” 就废掉了。
+
+## 4. Node.js 的应用场景
+
+- Web服务API，比如RESTful API（本身没有太多的逻辑，只需要请求API，组织数据进行返回即可）
+- 服务器渲染页面，提升速度
+- 后端的 Web 服务，例如跨域、服务器端的请求
+
+## 5. Node 中函数的特点
+
+Node 中 **任何一个模块（js文件）都被一个外层函数所包裹**。现在我们获得这个外层函数，那我们就有这样一个需求：在函数体内输出自身这个函数。使用 `arguments.callee` 可以做到：
+```js
+function demo() {
+    // 输出函数本身
+    console.log(arguments.callee);
+}
+```
+
+那么可以直接在 Node 中执行这段代码，获取这个外层函数：
+```js
+console.log(arguments.callee.toString());
+```
+
+执行这段代码，我们可以得到 Node 中的外层函数：
+```js
+function (exports, require, module, __filename, __dirname) { }
+```
+
+这意味这些参数在 Node 中可以直接调用：
+```js
+console.log(__filename);
+console.log(__dirname);
+```
+
+- `exports`：用于支持 CommonJS 模块化的暴露语法
+- `require`：用于支持 CommonJS 模块化的引入语法
+- `module`：用于支持 CommonJS 模块化的暴露语法
+- `__filename`：当前运行文件的绝对路径
+- `__dirname`：当前运行文件所在文件夹的绝对路径
+
+那么，这个外层函数有什么作用？  
+- 用于支持模块化语法
+- 隐藏服务器内部实现（从作用域角度去看，但不仅仅是这个方面，有自己的安全保护机制），服务器安全。
+
+## 6. Node 中的 global
+
+### 6.1 Node 的组成
+
+浏览器端的 JS 由三部分组成：
+- BOM
+- DOM
+- ECMAScript
+
+Node端的 JS：
+- 没有 BOM，因为服务器不需要
+- 没有 DOM，因为没有浏览器窗口，也就没有文档对象模型
+- 几乎包含了所有的 ES 规范
+- 没有 `window` 对象，取而代之的是一个叫 `global` 的全局变量
+- 在 Node 中禁止函数的 `this` 指向 `global`，所以执行 `console.log(this)` 的结果为 `{}`
+
+### 6.2 global 的一些常用属性
+
+```js
+console.log(global);
+```
+
+- `setInterval`：设置循环定时器
+- `clearInterval`：清空循环定时器
+- `setTimeout`：设置延迟定时器
+- `clearTimeout`：清空延迟定时器
+- `setImmediate`：设置立即执行函数
+- `clearImmediate`：清空立即执行函数
+
+## 7. Node 中的事件循环模型（了解）
+
+概览：
+```
+   ┌───────────────────────────┐
+┌─>│           timers          │
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │     pending callbacks     │
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │       idle, prepare       │
+│  └─────────────┬─────────────┘      ┌───────────────┐
+│  ┌─────────────┴─────────────┐      │   incoming:   │
+│  │           poll            │<─────┤  connections, │
+│  └─────────────┬─────────────┘      │   data, etc.  │
+│  ┌─────────────┴─────────────┐      └───────────────┘
+│  │           check           │
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+└──┤      close callbacks      │
+   └───────────────────────────┘
+```
+
+Node 事件循环模型包括 6 个阶段：
+- 第一个阶段: **timers（定时器阶段**：`setTimeout`、`setInterval`）
+    1. 开始计时
+    2. 执行计时器的回调（timers 独有）
+- 第二个阶段: pending calLbacks（系统阶段，我们一般不关注）
+- 第三个阶段: idle, prepare（准备阶段，我们一般不关注）
+- 第四个阶段: **poll（轮询阶段）**
+    - 如果回调队列里有待执行的回调函数
+        - 从回调队列中取出回调函数，同步执行（依次执行），直到回调队列为空，或者达到系统最大限制。
+    - 如果回调队列为空
+        - 如果设置过 `setImmediate`，则进入下一个 check 阶段，为了执行 `setImmediate` 所设置的回调。
+        - 如果未设置 `setImmediate`：
+            在此阶段停留，等待回调函数被插入回调队列。
+            若定时器到点了，进入下一check阶段。目的：为，了走第五阶段，随后走第六阶段（最终目的）
+- 第五个阶段: check（专门用于执行 `setImmediate` 所设置的回调）
+- 第六个阶段: close callbacks（关闭回调阶段）
+- `process.nextTick()`：设置立即执行函数（“人民币玩家”——能在任意阶段优先执行）
+
+特殊情况：
+- 当没有主线程事件的时候，`setTimeout(()=>{})` 和 `setImmediate(()=>{})` 的执行顺序不确定，取决于事件轮询的时间，看 timers 阶段是否来得及定时以及执行 `setTimeout`。
+- 当有了主线程事件的时候，那么 timers 阶段是完全有时间来定时以及执行 `setTimeout` 的，所以 `setTimeout(()=>{})` 将执行在 `setImmediate` 前面。
+
+```js
+// 延迟执行函数
+setTimeout(() => {
+    console.log('setTimeout指定的回调');
+})
+
+// 立即执行函数（回调）
+setImmediate(() => {
+    console.log('我是setImmediate执行的回调');
+})
+
+// 立即执行函数（VIP回调）
+process.nextTick(() => {
+    console.log('process.nextTick指定的回调函数');
+})
+
+console.log('我是主线程上的代码');
+```
+
+以上代码输出：
+```
+我是主线程上的代码
+process.nextTick指定的回调函数
+setTimeout指定的回调
+我是setImmediate执行的回调
+```
